@@ -10,10 +10,22 @@ const connect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
   try {
     console.log('Incoming event into connect is:   ', event);
 
+    const [userId, username]: string | undefined = event.requestContext?.authorizer?.principalId.split(' ');
+    const userData: { userId?: string; username?: string } = {};
+
+    if (userId) {
+      userData.userId = userId;
+    }
+
+    if (username) {
+      userData.username = username;
+    }
+
     const command = new PutCommand({
       TableName: process.env.CONNECTIONS_TABLE,
       Item: {
         connectionId: event.requestContext.connectionId,
+        ...userData,
       },
     });
 

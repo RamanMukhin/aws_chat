@@ -3,6 +3,8 @@ import type { AWS } from '@serverless/typescript';
 import connect from '@functions/connect';
 import disconnect from '@functions/disconnect';
 import message from '@functions/message';
+import login from '@functions/login';
+import authorizer from '@functions/authorizer';
 
 const serverlessConfiguration: AWS = {
   service: 'aws-chat',
@@ -45,6 +47,9 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
       CONNECTIONS_TABLE: '${env:CONNECTIONS_TABLE}',
+      USER_POOL_ID: '${env:USER_POOL_ID}',
+      CLIENT_ID: '${env:CLIENT_ID}',
+      CLIENT_SECRET: '${env:CLIENT_SECRET}',
     },
     iam: {
       role: {
@@ -66,11 +71,16 @@ const serverlessConfiguration: AWS = {
               },
             ],
           },
+          {
+            Effect: 'Allow',
+            Action: ['cognito-idp:AdminGetUser', 'cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminRespondToAuthChallenge'],
+            Resource: '${env:USER_POOL_ARN}',
+          },
         ],
       },
     },
   },
-  functions: { connect, disconnect, message },
+  functions: { connect, disconnect, message, login, authorizer },
   package: { individually: true },
   custom: {
     esbuild: {
