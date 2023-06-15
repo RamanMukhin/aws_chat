@@ -34,17 +34,15 @@ const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, c
   }
 };
 
-const generatePolicy = (effect: 'Deny' | 'Allow', resource: string): PolicyDocument => {
-  return {
-    Version: '2012-10-17',
-    Statement: [
-      {
-        Action: 'execute-api:Invoke',
-        Effect: effect,
-        Resource: resource,
-      },
-    ],
-  };
-};
+const generatePolicy = (effect: 'Deny' | 'Allow', resource: string): PolicyDocument => ({
+  Version: '2012-10-17',
+  Statement: [
+    {
+      Action: 'execute-api:Invoke',
+      Effect: effect,
+      Resource: resource,
+    },
+  ],
+});
 
 export const main = authorizer;

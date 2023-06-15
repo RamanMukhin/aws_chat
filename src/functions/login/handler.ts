@@ -4,7 +4,8 @@ import {
   AdminInitiateAuthCommand,
   AdminRespondToAuthChallengeCommand,
   AdminInitiateAuthResponse,
-} from '@aws-sdk/client-cognito-identity-provider'; // ES Modules import
+  DescribeUserPoolClientCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { formatJSONResponse, ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
 
@@ -14,26 +15,35 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
   console.log('Incoming event into login is:   ', event);
 
   try {
-    const client = new CognitoIdentityProviderClient({});
-    const CLIENT_ID = process.env.CLIENT_ID;
+    const cognitoIdentityProviderClient = new CognitoIdentityProviderClient({});
 
-    const hasher = createHmac('sha256', process.env.CLIENT_SECRET);
-    hasher.update(`${event.body.username}${CLIENT_ID}`);
-    const secretHash = hasher.digest('base64');
+    const { CLIENT_ID, USER_POOL_ID } = process.env;
 
-    const initiateAuthInput = {
+    const describeUserPoolClientCommand = new DescribeUserPoolClientCommand({
+      UserPoolId: USER_POOL_ID,
+      ClientId: CLIENT_ID,
+    });
+
+    const {
+      UserPoolClient: { ClientSecret: CLIENT_SECRET },
+    } = await cognitoIdentityProviderClient.send(describeUserPoolClientCommand);
+
+    const secretHash = createHmac('sha256', CLIENT_SECRET)
+      .update(`${event.body.username}${CLIENT_ID}`)
+      .digest('base64');
+
+    const initiateAuthCommand = new AdminInitiateAuthCommand({
       UserPoolId: process.env.USER_POOL_ID,
-      ClientId: process.env.CLIENT_ID,
+      ClientId: CLIENT_ID,
       AuthFlow: 'ADMIN_USER_PASSWORD_AUTH',
       AuthParameters: {
         USERNAME: event.body.username,
         PASSWORD: event.body.password,
         SECRET_HASH: secretHash,
       },
-    };
+    });
 
-    const initiateAuthCommand = new AdminInitiateAuthCommand(initiateAuthInput);
-    let response: AdminInitiateAuthResponse = await client.send(initiateAuthCommand);
+    let response: AdminInitiateAuthResponse = await cognitoIdentityProviderClient.send(initiateAuthCommand);
 
     if (response.ChallengeName && response.ChallengeName === 'NEW_PASSWORD_REQUIRED') {
       const respondToAuthChallengeInput = {
@@ -49,7 +59,7 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
       };
 
       const respondToAuthChallengeCommand = new AdminRespondToAuthChallengeCommand(respondToAuthChallengeInput);
-      response = await client.send(respondToAuthChallengeCommand);
+      response = await cognitoIdentityProviderClient.send(respondToAuthChallengeCommand);
     }
 
     return formatJSONResponse({ AuthenticationResult: response.AuthenticationResult });

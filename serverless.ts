@@ -5,6 +5,7 @@ import disconnect from '@functions/disconnect';
 import message from '@functions/message';
 import login from '@functions/login';
 import authorizer from '@functions/authorizer';
+import { STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
   service: 'aws-chat',
@@ -70,13 +71,9 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-      CONNECTIONS_TABLE: '${env:CONNECTIONS_TABLE}',
+      CONNECTIONS_TABLE: { Ref: 'ConnectionsTable' },
       USER_POOL_ID: { Ref: 'CognitoUserPool' },
       CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
-      CLIENT_SECRET: {
-        // Still not works (aws restrictions), need manual operation to set this env
-        'Fn::GetAtt': ['CognitoUserPoolClient', 'ClientSecret'],
-      },
     },
     iam: {
       role: {
@@ -92,11 +89,9 @@ const serverlessConfiguration: AWS = {
               // "dynamodb:UpdateItem",
               'dynamodb:DeleteItem',
             ],
-            Resource: [
-              {
-                'Fn::GetAtt': ['ConnectionsTable', 'Arn'],
-              },
-            ],
+            Resource: {
+              'Fn::GetAtt': ['ConnectionsTable', 'Arn'],
+            },
           },
           {
             Effect: 'Allow',
@@ -104,6 +99,7 @@ const serverlessConfiguration: AWS = {
               'cognito-idp:AdminGetUser',
               'cognito-idp:AdminInitiateAuth',
               'cognito-idp:AdminRespondToAuthChallenge',
+              'cognito-idp:DescribeUserPoolClient',
             ],
             Resource: {
               'Fn::GetAtt': ['CognitoUserPool', 'Arn'],
@@ -132,7 +128,7 @@ const serverlessConfiguration: AWS = {
         inMemory: true,
         migrate: true,
       },
-      stages: 'dev',
+      stages: STAGES.DEV,
     },
   },
   useDotenv: true,
