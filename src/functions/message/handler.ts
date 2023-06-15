@@ -1,9 +1,8 @@
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
-
 import schema from './schema';
-import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb';
+import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { postToConnections } from 'src/common/post-to-connections';
 import { createApiGatewayMangementEndpoint } from 'src/common/utils';
 import { createApiGatewayMangementApiClient } from '@libs/api-gateway-management-api-client';
