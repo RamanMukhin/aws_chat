@@ -1,15 +1,37 @@
-import { format } from 'util';
 import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
-import { docClient } from '../../libs/dynamo-db-doc-client';
+import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 
 import schema from './schema';
-import { ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { ScanCommand, ScanCommandInput } from '@aws-sdk/lib-dynamodb';
 import { postToConnections } from 'src/common/post-to-connections';
+import { createApiGatewayMangementEndpoint } from 'src/common/utils';
+import { createApiGatewayMangementApiClient } from '@libs/api-gateway-management-api-client';
+import { deleteConnection } from 'src/common/delete-connection';
+import { Connection } from 'src/common/types';
 
 const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
     console.log('Incoming event into message is:   ', event);
+
+    const [, , disconnectAt]: string | undefined = event.requestContext?.authorizer?.principalId.split(' ');
+    const {
+      requestContext: { connectionId },
+    } = event;
+
+    if (disconnectAt && Date.now() - +disconnectAt * 1000 >= 0) {
+      console.error('TOKEN EXPIRED.');
+
+      const {
+        requestContext: { domainName, stage },
+      } = event;
+      const endpoint = createApiGatewayMangementEndpoint(domainName, stage);
+      const apiGatewayManagementApiClient = createApiGatewayMangementApiClient(endpoint);
+
+      await deleteConnection(apiGatewayManagementApiClient, dynamoDBDocumentClient, connectionId);
+
+      return;
+    }
 
     const scanCommand = new ScanCommand({
       TableName: process.env.CONNECTIONS_TABLE,
@@ -18,20 +40,23 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
         '#DYNOBASE_connectionId': 'connectionId',
       },
       ExpressionAttributeValues: {
-        ':connectionId': event.requestContext.connectionId,
+        ':connectionId': connectionId,
       },
     });
 
-    const { Items } = await docClient.send(scanCommand);
+    const { Items } = await dynamoDBDocumentClient.send(scanCommand);
     console.log('CONNECTIONS:   ', Items);
 
     if (Items && Items.length) {
-      const domain = event.requestContext.domainName;
-      const stage = event.requestContext.stage;
-      const callbackUrl = format(format('https://%s/%s', domain, stage));
-      const url = stage === 'local' ? 'http://localhost:3001' : callbackUrl;
+      const {
+        requestContext: { domainName, stage },
+      } = event;
+      const endpoint = createApiGatewayMangementEndpoint(domainName, stage);
+      const apiGatewayMangementClient = createApiGatewayMangementApiClient(endpoint);
 
-      await Promise.all(postToConnections(url, Items as any, event.body));
+      await Promise.all(
+        postToConnections(apiGatewayMangementClient, dynamoDBDocumentClient, Items as any as Connection[], event.body),
+      );
     }
 
     return formatJSONResponse();

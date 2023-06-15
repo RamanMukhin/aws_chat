@@ -4,8 +4,7 @@ import { APIGatewayAuthorizerEvent, Context, Callback, PolicyDocument } from 'aw
 const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, callback: Callback) => {
   console.log('Incoming event into authorizer is:   ', JSON.stringify(event));
 
-  const { type } = event;
-  if (type !== 'REQUEST') {
+  if (event.type !== 'REQUEST') {
     return callback('Unauthorized');
   }
 
@@ -17,15 +16,16 @@ const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, c
     });
 
     const payload = await verifier.verify(event.queryStringParameters.Authorization.split(' ')[1]);
+    let effect: 'Allow' | 'Deny' = 'Allow';
 
     console.log('Token is valid. Payload:', payload);
 
-    const policy = generatePolicy('Allow', event.methodArn);
+    const policy = generatePolicy(effect, event.methodArn);
 
     console.log('Policy is:   ', JSON.stringify(policy));
 
     return callback(null, {
-      principalId: `${payload.sub} ${payload.username}`,
+      principalId: `${payload.sub} ${payload.username} ${payload.exp}`,
       policyDocument: policy,
     });
   } catch (err) {

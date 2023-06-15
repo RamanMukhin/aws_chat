@@ -5,8 +5,8 @@ export default {
   events: [
     {
       websocket: {
-        route: '$disconnect'
-      }
+        route: '$disconnect',
+      },
     },
   ],
 };

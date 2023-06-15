@@ -1,23 +1,30 @@
 import { ApiGatewayManagementApiClient, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
-import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from '@libs/dynamo-db-doc-client';
+import { DeleteCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { deleteConnection } from './delete-connection';
+import { Connection } from './types';
 
-export const postToConnections = (url: string, connectionIds: { connectionId: string }[], data: any) => {
-  const client = new ApiGatewayManagementApiClient({
-    apiVersion: '2018-11-29',
-    endpoint: url,
-  });
-
-  return connectionIds.map(async ({ connectionId }) => {
-    const input = {
-      ConnectionId: connectionId,
-      Data: Buffer.from(JSON.stringify(data)),
-    };
-
+export const postToConnections = (
+  apiGatewayManagementApiClient: ApiGatewayManagementApiClient,
+  dynamoDBDocumentClient: DynamoDBDocumentClient,
+  connections: Connection[],
+  data: any,
+): Promise<void>[] => {
+  return connections.map(async ({ connectionId, disconnectAt }: Connection) => {
     try {
-      const postToConnectionCommand = new PostToConnectionCommand(input);
+      if (disconnectAt && Date.now() - +disconnectAt * 1000 >= 0) {
+        console.error(`Connection ${connectionId} TOKEN EXPIRED.`);
 
-      await client.send(postToConnectionCommand);
+        await deleteConnection(apiGatewayManagementApiClient, dynamoDBDocumentClient, connectionId);
+
+        return;
+      }
+
+      const postToConnectionCommand = new PostToConnectionCommand({
+        ConnectionId: connectionId,
+        Data: Buffer.from(JSON.stringify(data)),
+      });
+
+      await apiGatewayManagementApiClient.send(postToConnectionCommand);
     } catch (err) {
       console.error('PostToConnection ERROR is:    ', err);
 
@@ -26,7 +33,7 @@ export const postToConnections = (url: string, connectionIds: { connectionId: st
         Key: { connectionId },
       });
 
-      await docClient.send(deleteCommand);
+      await dynamoDBDocumentClient.send(deleteCommand);
     }
   });
 };
