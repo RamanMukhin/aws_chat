@@ -34,6 +34,30 @@ const serverlessConfiguration: AWS = {
           },
         },
       },
+      CognitoUserPool: {
+        Type: 'AWS::Cognito::UserPool',
+        Properties: {
+          AliasAttributes: ['preferred_username'],
+          MfaConfiguration: 'OFF',
+          Policies: {
+            PasswordPolicy: {
+              MinimumLength: 6,
+              RequireLowercase: false,
+              RequireNumbers: false,
+              RequireSymbols: false,
+              RequireUppercase: false,
+            },
+          },
+        },
+      },
+      CognitoUserPoolClient: {
+        Type: 'AWS::Cognito::UserPoolClient',
+        Properties: {
+          GenerateSecret: true,
+          UserPoolId: { Ref: 'CognitoUserPool' },
+          ExplicitAuthFlows: ['ALLOW_REFRESH_TOKEN_AUTH', 'ALLOW_ADMIN_USER_PASSWORD_AUTH'],
+        },
+      },
     },
   },
   provider: {
@@ -47,9 +71,12 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
       CONNECTIONS_TABLE: '${env:CONNECTIONS_TABLE}',
-      USER_POOL_ID: '${env:USER_POOL_ID}',
-      CLIENT_ID: '${env:CLIENT_ID}',
-      CLIENT_SECRET: '${env:CLIENT_SECRET}',
+      USER_POOL_ID: { Ref: 'CognitoUserPool' },
+      CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
+      CLIENT_SECRET: {
+        // Still not works (aws restrictions), need manual operation to set this env
+        'Fn::GetAtt': ['CognitoUserPoolClient', 'ClientSecret'],
+      },
     },
     iam: {
       role: {
@@ -73,8 +100,14 @@ const serverlessConfiguration: AWS = {
           },
           {
             Effect: 'Allow',
-            Action: ['cognito-idp:AdminGetUser', 'cognito-idp:AdminInitiateAuth', 'cognito-idp:AdminRespondToAuthChallenge'],
-            Resource: '${env:USER_POOL_ARN}',
+            Action: [
+              'cognito-idp:AdminGetUser',
+              'cognito-idp:AdminInitiateAuth',
+              'cognito-idp:AdminRespondToAuthChallenge',
+            ],
+            Resource: {
+              'Fn::GetAtt': ['CognitoUserPool', 'Arn'],
+            },
           },
         ],
       },

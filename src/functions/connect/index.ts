@@ -6,6 +6,10 @@ export default {
     {
       websocket: {
         route: '$connect',
+        authorizer: {
+          name: 'authorizer',
+          identitySource: ['route.request.querystring.Authorization'],
+        },
       },
     },
   ],
