@@ -13,19 +13,35 @@ const serverlessConfiguration: AWS = {
   plugins: ['serverless-esbuild', 'serverless-offline', 'serverless-dynamodb-local'],
   resources: {
     Resources: {
-      ConnectionsTable: {
+      Table: {
         Type: 'AWS::DynamoDB::Table',
         Properties: {
-          TableName: '${env:CONNECTIONS_TABLE}',
+          TableName: '${env:TABLE}',
           KeySchema: [
             {
-              AttributeName: 'connectionId',
+              AttributeName: 'PK',
               KeyType: 'HASH',
+            },
+            {
+              AttributeName: 'SK',
+              KeyType: 'RANGE',
             },
           ],
           AttributeDefinitions: [
             {
-              AttributeName: 'connectionId',
+              AttributeName: 'PK',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'SK',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'GSI_PK',
+              AttributeType: 'S',
+            },
+            {
+              AttributeName: 'GSI_SK',
               AttributeType: 'S',
             },
           ],
@@ -33,6 +49,26 @@ const serverlessConfiguration: AWS = {
             ReadCapacityUnits: 5,
             WriteCapacityUnits: 5,
           },
+          GlobalSecondaryIndexes: [
+            {
+              IndexName: 'GSI',
+              KeySchema: [
+                {
+                  AttributeName: 'GSI_PK',
+                  KeyType: 'HASH',
+                },
+                {
+                  AttributeName: 'GSI_SK',
+                  KeyType: 'RANGE',
+                },
+              ],
+              Projection: { ProjectionType: 'ALL' },
+              ProvisionedThroughput: {
+                ReadCapacityUnits: 5,
+                WriteCapacityUnits: 5,
+              },
+            },
+          ],
         },
       },
       CognitoUserPool: {
@@ -71,7 +107,7 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-      CONNECTIONS_TABLE: { Ref: 'ConnectionsTable' },
+      TABLE: { Ref: 'Table' },
       USER_POOL_ID: { Ref: 'CognitoUserPool' },
       CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
     },
@@ -80,17 +116,25 @@ const serverlessConfiguration: AWS = {
         statements: [
           {
             Effect: 'Allow',
-            Action: [
-              // "dynamodb:DescribeTable",
-              // "dynamodb:Query",
-              'dynamodb:Scan',
-              // "dynamodb:GetItem",
-              'dynamodb:PutItem',
-              // "dynamodb:UpdateItem",
-              'dynamodb:DeleteItem',
-            ],
+            Action: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:DeleteItem'],
             Resource: {
-              'Fn::GetAtt': ['ConnectionsTable', 'Arn'],
+              'Fn::GetAtt': ['Table', 'Arn'],
+            },
+          },
+          {
+            Effect: 'Allow',
+            Action: ['dynamodb:Query'],
+            Resource: {
+              'Fn::Join': [
+                '/',
+                [
+                  {
+                    'Fn::GetAtt': ['Table', 'Arn'],
+                  },
+                  'index',
+                  'GSI',
+                ],
+              ],
             },
           },
           {

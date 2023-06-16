@@ -2,6 +2,7 @@ import { ApiGatewayManagementApiClient, PostToConnectionCommand } from '@aws-sdk
 import { DeleteCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { deleteConnection } from './delete-connection';
 import { Connection } from './types';
+import { DB_MAPPER, TABLE } from './constants';
 
 export const postToConnections = (
   apiGatewayManagementApiClient: ApiGatewayManagementApiClient,
@@ -9,18 +10,18 @@ export const postToConnections = (
   connections: Connection[],
   data: any,
 ): Promise<void>[] => {
-  return connections.map(async ({ connectionId, disconnectAt }: Connection) => {
+  return connections.map(async ({ PK: connectionIdPK, disconnectAt }: Connection) => {
     try {
       if (disconnectAt && Date.now() - +disconnectAt * 1000 >= 0) {
-        console.error(`Connection ${connectionId} TOKEN EXPIRED.`);
+        console.error(`Connection ${connectionIdPK} TOKEN EXPIRED.`);
 
-        await deleteConnection(apiGatewayManagementApiClient, dynamoDBDocumentClient, connectionId);
+        await deleteConnection(apiGatewayManagementApiClient, dynamoDBDocumentClient, DB_MAPPER.RAW_PK(connectionIdPK));
 
         return;
       }
 
       const postToConnectionCommand = new PostToConnectionCommand({
-        ConnectionId: connectionId,
+        ConnectionId: DB_MAPPER.RAW_PK(connectionIdPK),
         Data: Buffer.from(JSON.stringify(data)),
       });
 
@@ -29,8 +30,11 @@ export const postToConnections = (
       console.error('PostToConnection ERROR is:    ', err);
 
       const deleteCommand = new DeleteCommand({
-        TableName: process.env.CONNECTIONS_TABLE,
-        Key: { connectionId },
+        TableName: TABLE,
+        Key: {
+          PK: DB_MAPPER.CONNECTION(DB_MAPPER.RAW_PK(connectionIdPK)),
+          SK: DB_MAPPER.ENTITY,
+        },
       });
 
       await dynamoDBDocumentClient.send(deleteCommand);

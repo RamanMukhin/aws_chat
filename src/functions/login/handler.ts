@@ -1,4 +1,5 @@
 import { createHmac } from 'crypto';
+import { constants as httpConstants } from 'http2';
 import {
   CognitoIdentityProviderClient,
   AdminInitiateAuthCommand,
@@ -65,11 +66,11 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
     return formatJSONResponse({ AuthenticationResult: response.AuthenticationResult });
   } catch (err) {
     console.error(err);
-    if (err?.$metadata.httpStatusCode === 400) {
-      return formatJSONResponse({ message: 'Unauthorized' }, 401);
+    if (err?.$metadata.httpStatusCode === httpConstants.HTTP_STATUS_BAD_REQUEST) {
+      return formatJSONResponse({ message: 'Unauthorized' }, httpConstants.HTTP_STATUS_UNAUTHORIZED);
     }
 
-    return formatJSONResponse({ message: err.message }, 500);
+    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
   }
 };
 

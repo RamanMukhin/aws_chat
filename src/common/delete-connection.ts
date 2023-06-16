@@ -1,5 +1,6 @@
 import { ApiGatewayManagementApiClient, DeleteConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
 import { DeleteCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { DB_MAPPER, TABLE } from './constants';
 
 export const deleteConnection = async (
   apiGatewayManagementApiClient: ApiGatewayManagementApiClient,
@@ -11,8 +12,11 @@ export const deleteConnection = async (
   });
 
   const deleteCommand = new DeleteCommand({
-    TableName: process.env.CONNECTIONS_TABLE,
-    Key: { connectionId },
+    TableName: TABLE,
+    Key: {
+      PK: DB_MAPPER.CONNECTION(connectionId),
+      SK: DB_MAPPER.ENTITY,
+    },
   });
 
   try {

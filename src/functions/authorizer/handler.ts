@@ -16,6 +16,7 @@ const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, c
     });
 
     const payload = await verifier.verify(event.queryStringParameters.Authorization.split(' ')[1]);
+    // const payload = {sub: 'f65f7fb5-9d73-4cb5-a693-575f5c17a6b7', username: 'test', exp: Date.now() + 3600000};
     let effect: 'Allow' | 'Deny' = 'Allow';
 
     console.log('Token is valid. Payload:', payload);

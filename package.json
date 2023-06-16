@@ -18,12 +18,14 @@
     "@middy/core": "^3.4.0",
     "@middy/http-json-body-parser": "^3.4.0",
     "aws-jwt-verify": "^4.0.0",
-    "serverless-dynamodb-local": "^0.2.40"
+    "serverless-dynamodb-local": "^0.2.40",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@serverless/typescript": "^3.0.0",
     "@types/aws-lambda": "^8.10.71",
     "@types/node": "^14.14.25",
+    "@types/uuid": "^9.0.2",
     "esbuild": "^0.17.19",
     "json-schema-to-ts": "^1.5.0",
     "serverless": "^3.0.0",
