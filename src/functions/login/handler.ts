@@ -1,7 +1,6 @@
 import { createHmac } from 'crypto';
 import { constants as httpConstants } from 'http2';
 import {
-  CognitoIdentityProviderClient,
   AdminInitiateAuthCommand,
   AdminRespondToAuthChallengeCommand,
   AdminInitiateAuthResponse,
@@ -9,15 +8,14 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider';
 import { formatJSONResponse, ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
-
+import { cognitoIdentityProviderClient } from '@libs/cognito-identitu-provider-client';
 import schema from './schema';
 
 const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   console.log('Incoming event into login is:   ', event);
 
   try {
-    const cognitoIdentityProviderClient = new CognitoIdentityProviderClient({});
-
+    const { username } = event.body;
     const { CLIENT_ID, USER_POOL_ID } = process.env;
 
     const describeUserPoolClientCommand = new DescribeUserPoolClientCommand({
@@ -29,16 +27,14 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
       UserPoolClient: { ClientSecret: CLIENT_SECRET },
     } = await cognitoIdentityProviderClient.send(describeUserPoolClientCommand);
 
-    const secretHash = createHmac('sha256', CLIENT_SECRET)
-      .update(`${event.body.username}${CLIENT_ID}`)
-      .digest('base64');
+    const secretHash = createHmac('sha256', CLIENT_SECRET).update(`${username}${CLIENT_ID}`).digest('base64');
 
     const initiateAuthCommand = new AdminInitiateAuthCommand({
       UserPoolId: process.env.USER_POOL_ID,
       ClientId: CLIENT_ID,
       AuthFlow: 'ADMIN_USER_PASSWORD_AUTH',
       AuthParameters: {
-        USERNAME: event.body.username,
+        USERNAME: username,
         PASSWORD: event.body.password,
         SECRET_HASH: secretHash,
       },
@@ -52,7 +48,7 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
         ClientId: process.env.CLIENT_ID,
         ChallengeName: response.ChallengeName,
         ChallengeResponses: {
-          USERNAME: event.body.username,
+          USERNAME: username,
           NEW_PASSWORD: event.body.password,
           SECRET_HASH: secretHash,
         },
@@ -65,7 +61,8 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
 
     return formatJSONResponse({ AuthenticationResult: response.AuthenticationResult });
   } catch (err) {
-    console.error(err);
+    console.error('ERROR is:    ', err);
+    
     if (err?.$metadata.httpStatusCode === httpConstants.HTTP_STATUS_BAD_REQUEST) {
       return formatJSONResponse({ message: 'Unauthorized' }, httpConstants.HTTP_STATUS_UNAUTHORIZED);
     }

@@ -84,7 +84,7 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
       },
       ExpressionAttributeValues: {
         ':gsi_pk': DB_MAPPER.ENTITY,
-        ':gsi_sk': DB_MAPPER.CONNECTION('').slice(0, -1),
+        ':gsi_sk': DB_MAPPER.USER('').slice(0, -1),
         ':pk': DB_MAPPER.CONNECTION(connectionId),
       },
       FilterExpression: '#PK <> :pk',

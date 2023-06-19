@@ -5,12 +5,14 @@ import { middyfy } from '@libs/lambda';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 
 import schema from './schema';
-import { DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DeleteCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { DB_MAPPER, TABLE } from 'src/common/constants';
 
 const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
     console.log('Incoming event into disconnect is:   ', event);
+
+    const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
 
     const deleteCommand = new DeleteCommand({
       TableName: TABLE,
@@ -21,6 +23,39 @@ const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
     });
 
     await dynamoDBDocumentClient.send(deleteCommand);
+
+    const queryCommand = new QueryCommand({
+      TableName: TABLE,
+      IndexName: 'GSI',
+      KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
+      ExpressionAttributeNames: {
+        '#GSI_PK': 'GSI_PK',
+        '#GSI_SK': 'GSI_SK',
+      },
+      ExpressionAttributeValues: {
+        ':gsi_pk': DB_MAPPER.ENTITY,
+        ':gsi_sk': DB_MAPPER.USER(userId),
+      },
+    });
+
+    const { Items } = await dynamoDBDocumentClient.send(queryCommand);
+    console.log('ALIVE USER CONNECTIONS:   ', Items);
+
+    if (Items && !Items.length) {
+      const updateCommand = new UpdateCommand({
+        TableName: TABLE,
+        Key: {
+          PK: DB_MAPPER.USER(userId),
+          SK: DB_MAPPER.ENTITY,
+        },
+        UpdateExpression: 'set isOnline = :isOnline',
+        ExpressionAttributeValues: {
+          ':isOnline': false,
+        },
+      });
+
+      await dynamoDBDocumentClient.send(updateCommand);
+    }
 
     return formatJSONResponse();
   } catch (err) {

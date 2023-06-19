@@ -4,7 +4,7 @@ import { formatJSONResponse } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
-import { PutCommand } from '@aws-sdk/lib-dynamodb';
+import { TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ConnectionData } from 'src/common/types';
 import { DB_MAPPER, TABLE } from 'src/common/constants';
 
@@ -34,18 +34,37 @@ const connect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
     }
     const { connectionId } = event.requestContext;
 
-    const putCommand = new PutCommand({
-      TableName: TABLE,
-      Item: {
-        PK: DB_MAPPER.CONNECTION(connectionId),
-        SK: DB_MAPPER.ENTITY,
-        GSI_PK: DB_MAPPER.ENTITY,
-        GSI_SK: DB_MAPPER.CONNECTION(connectionId),
-        ...userData,
-      },
+    const transactWriteCommand = new TransactWriteCommand({
+      TransactItems: [
+        {
+          Put: {
+            TableName: TABLE,
+            Item: {
+              PK: DB_MAPPER.CONNECTION(connectionId),
+              SK: DB_MAPPER.ENTITY,
+              GSI_PK: DB_MAPPER.ENTITY,
+              GSI_SK: DB_MAPPER.USER(userId),
+              ...userData,
+            },
+          },
+        },
+        {
+          Update: {
+            TableName: TABLE,
+            Key: {
+              PK: DB_MAPPER.USER(userId),
+              SK: DB_MAPPER.ENTITY,
+            },
+            UpdateExpression: 'set isOnline = :isOnline',
+            ExpressionAttributeValues: {
+              ':isOnline': true,
+            },
+          },
+        },
+      ],
     });
 
-    await dynamoDBDocumentClient.send(putCommand);
+    await dynamoDBDocumentClient.send(transactWriteCommand);
 
     return formatJSONResponse();
   } catch (err) {

@@ -3,6 +3,7 @@ import type { AWS } from '@serverless/typescript';
 import connect from '@functions/connect';
 import disconnect from '@functions/disconnect';
 import message from '@functions/message';
+import signup from '@functions/signup';
 import login from '@functions/login';
 import authorizer from '@functions/authorizer';
 import { STAGES } from 'src/common/constants';
@@ -110,13 +111,26 @@ const serverlessConfiguration: AWS = {
       TABLE: { Ref: 'Table' },
       USER_POOL_ID: { Ref: 'CognitoUserPool' },
       CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
+      // Uncomment for local development
+      // ...{
+      //   TABLE: '${env:TABLE}',
+      //   USER_POOL_ID: '${env:USER_POOL_ID}',
+      //   CLIENT_ID: '${env:CLIENT_ID}',
+      // },
     },
     iam: {
       role: {
         statements: [
           {
             Effect: 'Allow',
-            Action: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:DeleteItem'],
+            Action: [
+              'dynamodb:Query',
+              'dynamodb:GetItem',
+              'dynamodb:PutItem',
+              'dynamodb:UpdateItem',
+              'dynamodb:TransactWriteItems',
+              'dynamodb:DeleteItem',
+            ],
             Resource: {
               'Fn::GetAtt': ['Table', 'Arn'],
             },
@@ -141,6 +155,7 @@ const serverlessConfiguration: AWS = {
             Effect: 'Allow',
             Action: [
               'cognito-idp:AdminGetUser',
+              'cognito-idp:AdminCreateUser',
               'cognito-idp:AdminInitiateAuth',
               'cognito-idp:AdminRespondToAuthChallenge',
               'cognito-idp:DescribeUserPoolClient',
@@ -153,7 +168,7 @@ const serverlessConfiguration: AWS = {
       },
     },
   },
-  functions: { connect, disconnect, message, login, authorizer },
+  functions: { connect, disconnect, message, signup, login, authorizer },
   package: { individually: true },
   custom: {
     esbuild: {
