@@ -1,0 +1,6 @@
+{
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"type\": \"private\",\"participants\": [\"14a89408-50f1-7088-815f-80e515f97f34\"]}"
+}

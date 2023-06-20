@@ -5,6 +5,11 @@ export const STAGES = {
   DEV: 'dev',
 };
 
+export const ROOM_TYPES = {
+  PRIVATE: 'private',
+  GROUP: 'group',
+};
+
 export const LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT = 'http://localhost:3001';
 
 export const LOCAL_DYNAMO_DB_ENDPOINT = 'http://localhost:5000';

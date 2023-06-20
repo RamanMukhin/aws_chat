@@ -5,6 +5,7 @@ import disconnect from '@functions/disconnect';
 import message from '@functions/message';
 import signup from '@functions/signup';
 import login from '@functions/login';
+import createTalk from '@functions/createTalk';
 import authorizer from '@functions/authorizer';
 import { STAGES } from 'src/common/constants';
 
@@ -129,6 +130,7 @@ const serverlessConfiguration: AWS = {
               'dynamodb:PutItem',
               'dynamodb:UpdateItem',
               'dynamodb:TransactWriteItems',
+              'dynamodb:BatchGetItem',
               'dynamodb:DeleteItem',
             ],
             Resource: {
@@ -168,7 +170,7 @@ const serverlessConfiguration: AWS = {
       },
     },
   },
-  functions: { connect, disconnect, message, signup, login, authorizer },
+  functions: { connect, disconnect, message, signup, login, createTalk, authorizer },
   package: { individually: true },
   custom: {
     esbuild: {

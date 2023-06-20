@@ -4,7 +4,11 @@ import { APIGatewayAuthorizerEvent, Context, Callback, PolicyDocument } from 'aw
 const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, callback: Callback) => {
   console.log('Incoming event into authorizer is:   ', JSON.stringify(event));
 
-  if (event.type !== 'REQUEST') {
+  const token = (event.type === 'REQUEST' ? event.queryStringParameters.Authorization : event.authorizationToken).split(
+    ' ',
+  )[1];
+
+  if (!token) {
     return callback('Unauthorized');
   }
 
@@ -15,8 +19,8 @@ const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, c
       clientId: process.env.CLIENT_ID,
     });
 
-    const payload = await verifier.verify(event.queryStringParameters.Authorization.split(' ')[1]);
-    // const payload = {sub: 'f65f7fb5-9d73-4cb5-a693-575f5c17a6b7', username: 'test', exp: Date.now() + 3600000};
+    const payload = await verifier.verify(token);
+
     let effect: 'Allow' | 'Deny' = 'Allow';
 
     console.log('Token is valid. Payload:', payload);
