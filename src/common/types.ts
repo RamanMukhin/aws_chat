@@ -5,9 +5,16 @@ export type ConnectionData = {
   disconnectAt?: string;
 };
 
-export type Connection = {
+type Entity = {
   PK: string;
   SK: string;
+};
+
+type EntityWithGSI = Entity & {
   GSI_PK: string;
   GSI_SK: string;
-} & ConnectionData;
+};
+
+export type Connection = EntityWithGSI & ConnectionData;
+
+export type RoomUser = EntityWithGSI;

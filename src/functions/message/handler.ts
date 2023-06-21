@@ -4,13 +4,16 @@ import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
-import { PutCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { postToConnections } from 'src/common/post-to-connections';
 import { createApiGatewayMangementEndpoint } from 'src/common/utils';
 import { createApiGatewayMangementApiClient } from '@libs/api-gateway-management-api-client';
 import { deleteConnection } from 'src/common/delete-connection';
-import { Connection } from 'src/common/types';
-import { DB_MAPPER, MOCK_ROOM, TABLE } from 'src/common/constants';
+import { Connection, RoomUser } from 'src/common/types';
+import { DB_MAPPER, END_PK_REG_EXP, TABLE } from 'src/common/constants';
+import { CustomError } from 'src/common/errors';
+import { middyfyWS } from '@libs/lambda';
+import { checkRoom } from 'src/common/check-room';
 
 const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
@@ -35,75 +38,89 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
       return;
     }
 
-    const getCommand = new GetCommand({
-      TableName: TABLE,
-      Key: {
-        PK: DB_MAPPER.ROOM(MOCK_ROOM),
-        SK: DB_MAPPER.ENTITY,
-      },
-    });
+    const { roomId, message: messageData } = event.body;
 
-    let { Item: room } = await dynamoDBDocumentClient.send(getCommand);
-
-    if (!room) {
-      const putCommand = new PutCommand({
-        TableName: TABLE,
-        Item: {
-          PK: DB_MAPPER.ROOM(MOCK_ROOM),
-          SK: DB_MAPPER.ENTITY,
-        },
-      });
-
-      await dynamoDBDocumentClient.send(putCommand);
+    if (!roomId || !messageData) {
+      throw new CustomError('Room or message was not specified', httpConstants.HTTP_STATUS_BAD_REQUEST);
     }
+
+    await checkRoom(roomId, userId);
 
     const messageId = uuidv4();
 
-    const putCommand = new PutCommand({
+    const updateCommand = new UpdateCommand({
       TableName: TABLE,
-      Item: {
+      Key: {
         PK: DB_MAPPER.MESSAGE(messageId),
         SK: DB_MAPPER.ENTITY,
-        GSI_PK: DB_MAPPER.ROOM(MOCK_ROOM),
-        GSI_SK: DB_MAPPER.MESSAGE(messageId),
-        userId,
-        data: JSON.stringify(event.body),
       },
+      UpdateExpression:
+        'SET GSI_PK = :GSI_PK, GSI_SK = :GSI_SK, userId = :userId, #data = :data, createdAt = :createdAt',
+      ExpressionAttributeValues: {
+        ':GSI_PK': DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId)),
+        ':GSI_SK': DB_MAPPER.MESSAGE(messageId),
+        ':userId': userId,
+        ':data': JSON.stringify(messageData),
+        ':createdAt': new Date().toISOString(),
+      },
+      ExpressionAttributeNames: {
+        '#data': 'data',
+      },
+      ReturnValues: 'ALL_NEW',
     });
 
-    await dynamoDBDocumentClient.send(putCommand);
+    const { Attributes: message } = await dynamoDBDocumentClient.send(updateCommand);
 
-    const queryCommand = new QueryCommand({
+    const queryCommandRoomUsers = new QueryCommand({
       TableName: TABLE,
       IndexName: 'GSI',
       KeyConditionExpression: '#GSI_PK = :gsi_pk and begins_with(#GSI_SK, :gsi_sk)',
       ExpressionAttributeNames: {
         '#GSI_PK': 'GSI_PK',
         '#GSI_SK': 'GSI_SK',
-        '#PK': 'PK',
       },
       ExpressionAttributeValues: {
-        ':gsi_pk': DB_MAPPER.ENTITY,
-        ':gsi_sk': DB_MAPPER.USER('').slice(0, -1),
-        ':pk': DB_MAPPER.CONNECTION(connectionId),
+        ':gsi_pk': DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId)),
+        ':gsi_sk': DB_MAPPER.USER('').replace(END_PK_REG_EXP, ''),
       },
-      FilterExpression: '#PK <> :pk',
-      ScanIndexForward: true,
     });
 
-    const { Items } = await dynamoDBDocumentClient.send(queryCommand);
-    console.log('CONNECTIONS:   ', Items);
+    const roomUsers = (await dynamoDBDocumentClient.send(queryCommandRoomUsers)).Items as RoomUser[];
 
-    if (Items && Items.length) {
+    const connections = await Promise.all(
+      roomUsers.map(async (it) => {
+        const userId = DB_MAPPER.RAW_PK(it.PK);
+
+        const queryCommandConnection = new QueryCommand({
+          TableName: TABLE,
+          IndexName: 'GSI',
+          KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
+          ExpressionAttributeNames: {
+            '#GSI_PK': 'GSI_PK',
+            '#GSI_SK': 'GSI_SK',
+          },
+          ExpressionAttributeValues: {
+            ':gsi_pk': DB_MAPPER.ENTITY,
+            ':gsi_sk': DB_MAPPER.USER(userId),
+          },
+        });
+
+        const connections = (await dynamoDBDocumentClient.send(queryCommandConnection)).Items as Connection[];
+
+        return connections && connections[0];
+      }),
+    );
+
+    console.log('CONNECTIONS:   ', connections);
+
+    if (connections.length) {
       const {
         requestContext: { domainName, stage },
       } = event;
       const endpoint = createApiGatewayMangementEndpoint(domainName, stage);
       const apiGatewayMangementClient = createApiGatewayMangementApiClient(endpoint);
 
-      await Promise.all(
-        postToConnections(apiGatewayMangementClient, dynamoDBDocumentClient, Items as any as Connection[], event.body),
-      );
+      await Promise.all(postToConnections(apiGatewayMangementClient, dynamoDBDocumentClient, connections, message));
     }
 
     return formatJSONResponse();
@@ -113,4 +130,4 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
   }
 };
 
-export const main = message;
+export const main = middyfyWS(message);

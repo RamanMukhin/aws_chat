@@ -1,0 +1,8 @@
+{
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "pathParameters": {
+    "roomId": "8e9ad1cb-9f93-46d5-beba-c2c930786f5f"
+  }
+}

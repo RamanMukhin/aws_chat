@@ -5,8 +5,10 @@ import disconnect from '@functions/disconnect';
 import message from '@functions/message';
 import signup from '@functions/signup';
 import login from '@functions/login';
-import createTalk from '@functions/createTalk';
 import authorizer from '@functions/authorizer';
+import createRoom from '@functions/createRoom';
+import getRooms from '@functions/getRooms';
+import getMessages from '@functions/getMessages';
 import { STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
@@ -170,7 +172,7 @@ const serverlessConfiguration: AWS = {
       },
     },
   },
-  functions: { connect, disconnect, message, signup, login, createTalk, authorizer },
+  functions: { connect, disconnect, message, signup, login, authorizer, createRoom, getRooms, getMessages },
   package: { individually: true },
   custom: {
     esbuild: {

@@ -18,11 +18,15 @@ export const TABLE = process.env.TABLE;
 
 export const MOCK_ROOM = '1';
 
+export const START_PK_REG_EXP = /^(.*)_</;
+
+export const END_PK_REG_EXP = />$/;
+
 export const DB_MAPPER = {
   ENTITY: 'ENTITY',
   USER: (userId: string) => `USER_<${userId}>`,
   ROOM: (roomId: string) => `ROOM_<${roomId}>`,
   MESSAGE: (messageId: string) => `MESSAGE_<${messageId}>`,
   CONNECTION: (connectionId: string) => `CONNECTION_<${connectionId}>`,
-  RAW_PK: (partitionKey: string) => partitionKey.replace(/^(.*)_</, '').slice(0, -1),
+  RAW_PK: (partitionKey: string) => partitionKey.replace(START_PK_REG_EXP, '').replace(END_PK_REG_EXP, ''),
 };

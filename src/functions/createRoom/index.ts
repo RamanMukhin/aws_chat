@@ -7,7 +7,7 @@ export default {
     {
       http: {
         method: 'post',
-        path: 'talk',
+        path: 'rooms',
         request: {
           schemas: {
             'application/json': schema,

@@ -17,6 +17,7 @@
     "@aws-sdk/lib-dynamodb": "^3.348.0",
     "@middy/core": "^3.4.0",
     "@middy/http-json-body-parser": "^3.4.0",
+    "@middy/ws-json-body-parser": "^4.5.2",
     "aws-jwt-verify": "^4.0.0",
     "serverless-dynamodb-local": "^0.2.40",
     "uuid": "^9.0.0"

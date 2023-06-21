@@ -9,9 +9,9 @@ import { TransactWriteCommand, BatchGetCommand, QueryCommand } from '@aws-sdk/li
 import { DB_MAPPER, ROOM_TYPES, TABLE } from 'src/common/constants';
 import { CustomError } from 'src/common/errors';
 
-const createTalk: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
+const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
-    console.log('Incoming event into createTalk is:   ', event);
+    console.log('Incoming event into createRoom is:   ', event);
 
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
 
@@ -98,7 +98,7 @@ const createTalk: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
             GSI_PK: DB_MAPPER.USER(userId),
             GSI_SK: DB_MAPPER.USER(interlocutorId),
           }
-        : { name: event.body.name || 'Private talk' };
+        : { name: event.body.name || 'Group talk' };
 
     const transactWriteCommand = new TransactWriteCommand({
       TransactItems: [
@@ -127,4 +127,4 @@ const createTalk: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
   }
 };
 
-export const main = middyfy(createTalk);
+export const main = middyfy(createRoom);
