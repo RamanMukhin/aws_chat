@@ -41,8 +41,8 @@ const connect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
             TableName: TABLE,
             Item: {
               PK: DB_MAPPER.CONNECTION(connectionId),
-              SK: DB_MAPPER.ENTITY,
-              GSI_PK: DB_MAPPER.ENTITY,
+              SK: DB_MAPPER.ENTITY(),
+              GSI_PK: DB_MAPPER.ENTITY(),
               GSI_SK: DB_MAPPER.USER(userId),
               ...userData,
             },
@@ -53,7 +53,7 @@ const connect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
             TableName: TABLE,
             Key: {
               PK: DB_MAPPER.USER(userId),
-              SK: DB_MAPPER.ENTITY,
+              SK: DB_MAPPER.ENTITY(),
             },
             UpdateExpression: 'set isOnline = :isOnline',
             ExpressionAttributeValues: {

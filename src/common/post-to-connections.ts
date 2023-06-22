@@ -33,7 +33,7 @@ export const postToConnections = (
         TableName: TABLE,
         Key: {
           PK: DB_MAPPER.CONNECTION(DB_MAPPER.RAW_PK(connectionIdPK)),
-          SK: DB_MAPPER.ENTITY,
+          SK: DB_MAPPER.ENTITY(),
         },
       });
 

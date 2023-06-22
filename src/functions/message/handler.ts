@@ -52,7 +52,7 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
       TableName: TABLE,
       Key: {
         PK: DB_MAPPER.MESSAGE(messageId),
-        SK: DB_MAPPER.ENTITY,
+        SK: DB_MAPPER.ENTITY(),
       },
       UpdateExpression:
         'SET GSI_PK = :GSI_PK, GSI_SK = :GSI_SK, userId = :userId, #data = :data, createdAt = :createdAt',
@@ -74,11 +74,7 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
     const queryCommandRoomUsers = new QueryCommand({
       TableName: TABLE,
       IndexName: GSI_FIRST,
-      KeyConditionExpression: '#GSI_PK = :gsi_pk and begins_with(#GSI_SK, :gsi_sk)',
-      ExpressionAttributeNames: {
-        '#GSI_PK': 'GSI_PK',
-        '#GSI_SK': 'GSI_SK',
-      },
+      KeyConditionExpression: 'GSI_PK = :gsi_pk and begins_with(GSI_SK, :gsi_sk)',
       ExpressionAttributeValues: {
         ':gsi_pk': DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId)),
         ':gsi_sk': DB_MAPPER.USER('').replace(END_PK_REG_EXP, ''),
@@ -94,13 +90,9 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
         const queryCommandConnection = new QueryCommand({
           TableName: TABLE,
           IndexName: GSI_FIRST,
-          KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
-          ExpressionAttributeNames: {
-            '#GSI_PK': 'GSI_PK',
-            '#GSI_SK': 'GSI_SK',
-          },
+          KeyConditionExpression: 'GSI_PK = :gsi_pk and GSI_SK = :gsi_sk',
           ExpressionAttributeValues: {
-            ':gsi_pk': DB_MAPPER.ENTITY,
+            ':gsi_pk': DB_MAPPER.ENTITY(),
             ':gsi_sk': DB_MAPPER.USER(DB_MAPPER.RAW_PK(roomUser.PK)),
           },
         });

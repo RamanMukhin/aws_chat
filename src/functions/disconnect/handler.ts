@@ -18,7 +18,7 @@ const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
       TableName: TABLE,
       Key: {
         PK: DB_MAPPER.CONNECTION(event.requestContext.connectionId),
-        SK: DB_MAPPER.ENTITY,
+        SK: DB_MAPPER.ENTITY(),
       },
     });
 
@@ -27,13 +27,9 @@ const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
     const queryCommand = new QueryCommand({
       TableName: TABLE,
       IndexName: GSI_FIRST,
-      KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
-      ExpressionAttributeNames: {
-        '#GSI_PK': 'GSI_PK',
-        '#GSI_SK': 'GSI_SK',
-      },
+      KeyConditionExpression: 'GSI_PK = :gsi_pk and GSI_SK = :gsi_sk',
       ExpressionAttributeValues: {
-        ':gsi_pk': DB_MAPPER.ENTITY,
+        ':gsi_pk': DB_MAPPER.ENTITY(),
         ':gsi_sk': DB_MAPPER.USER(userId),
       },
     });
@@ -46,7 +42,7 @@ const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
         TableName: TABLE,
         Key: {
           PK: DB_MAPPER.USER(userId),
-          SK: DB_MAPPER.ENTITY,
+          SK: DB_MAPPER.ENTITY(),
         },
         UpdateExpression: 'set isOnline = :isOnline',
         ExpressionAttributeValues: {

@@ -46,7 +46,7 @@ const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
 
       usersGetInput.push({
         PK: DB_MAPPER.USER(userId),
-        SK: DB_MAPPER.ENTITY,
+        SK: DB_MAPPER.ENTITY(),
       });
     });
 
@@ -73,11 +73,7 @@ const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
         new QueryCommand({
           TableName: TABLE,
           IndexName: GSI_FIRST,
-          KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
-          ExpressionAttributeNames: {
-            '#GSI_PK': 'GSI_PK',
-            '#GSI_SK': 'GSI_SK',
-          },
+          KeyConditionExpression: 'GSI_PK = :gsi_pk and GSI_SK = :gsi_sk',
           ExpressionAttributeValues: {
             ':gsi_pk': DB_MAPPER.USER(interlocutorId),
             ':gsi_sk': DB_MAPPER.USER(userId),
@@ -107,7 +103,7 @@ const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
             TableName: TABLE,
             Item: {
               PK: DB_MAPPER.ROOM(roomId),
-              SK: DB_MAPPER.ENTITY,
+              SK: DB_MAPPER.ENTITY(),
               owner: DB_MAPPER.USER(userId),
               type: event.body.type,
               ...conditionalRoomData,

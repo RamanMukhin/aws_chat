@@ -24,7 +24,7 @@ const signup: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) 
       TableName: TABLE,
       Item: {
         PK: DB_MAPPER.USER(response.User.Attributes[0].Value),
-        SK: DB_MAPPER.ENTITY,
+        SK: DB_MAPPER.ENTITY(),
         userName: response.User.Username,
         createdAt: response.User.UserCreateDate.toISOString(),
         isOnline: false,
@@ -36,7 +36,7 @@ const signup: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) 
     return formatJSONResponse({ message: 'success' });
   } catch (err) {
     console.error('ERROR is:    ', err);
-    
+
     if (err?.$metadata?.httpStatusCode === httpConstants.HTTP_STATUS_BAD_REQUEST) {
       return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_BAD_REQUEST);
     }

@@ -15,7 +15,7 @@ export const deleteConnection = async (
     TableName: TABLE,
     Key: {
       PK: DB_MAPPER.CONNECTION(connectionId),
-      SK: DB_MAPPER.ENTITY,
+      SK: DB_MAPPER.ENTITY(),
     },
   });
 
