@@ -19,6 +19,7 @@
     "@middy/http-json-body-parser": "^3.4.0",
     "@middy/ws-json-body-parser": "^4.5.2",
     "aws-jwt-verify": "^4.0.0",
+    "serverless-api-gateway-caching": "^1.10.1",
     "serverless-dynamodb-local": "^0.2.40",
     "uuid": "^9.0.0"
   },

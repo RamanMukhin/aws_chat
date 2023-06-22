@@ -1,12 +1,13 @@
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { APIGatewayAuthorizerEvent, Context, Callback, PolicyDocument } from 'aws-lambda';
+import { AUTHORIZER_EVENT } from 'src/common/constants';
 
 const authorizer = async (event: APIGatewayAuthorizerEvent, _context: Context, callback: Callback) => {
   console.log('Incoming event into authorizer is:   ', JSON.stringify(event));
 
-  const token = (event.type === 'REQUEST' ? event.queryStringParameters.Authorization : event.authorizationToken).split(
-    ' ',
-  )[1];
+  const token = (
+    event.type === AUTHORIZER_EVENT.REQUEST ? event.queryStringParameters.Authorization : event.authorizationToken
+  ).split(' ')[1];
 
   if (!token) {
     return callback('Unauthorized');

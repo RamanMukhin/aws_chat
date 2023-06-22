@@ -9,12 +9,12 @@ import authorizer from '@functions/authorizer';
 import createRoom from '@functions/createRoom';
 import getRooms from '@functions/getRooms';
 import getMessages from '@functions/getMessages';
-import { STAGES } from 'src/common/constants';
+import { GSI_FIRST, STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
   service: 'aws-chat',
   frameworkVersion: '3',
-  plugins: ['serverless-esbuild', 'serverless-offline', 'serverless-dynamodb-local'],
+  plugins: ['serverless-esbuild', 'serverless-offline', 'serverless-dynamodb-local', 'serverless-api-gateway-caching'],
   resources: {
     Resources: {
       Table: {
@@ -55,7 +55,7 @@ const serverlessConfiguration: AWS = {
           },
           GlobalSecondaryIndexes: [
             {
-              IndexName: 'GSI',
+              IndexName: GSI_FIRST,
               KeySchema: [
                 {
                   AttributeName: 'GSI_PK',

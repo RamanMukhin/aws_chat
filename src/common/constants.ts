@@ -1,3 +1,5 @@
+import { AUTHORIZER_EVENT_TYPE } from './types';
+
 export const API_VERSION = process.env.API_VERSION || '2018-11-29';
 
 export const STAGES = {
@@ -10,17 +12,24 @@ export const ROOM_TYPES = {
   GROUP: 'group',
 };
 
+export const AUTHORIZER_EVENT: AUTHORIZER_EVENT_TYPE = {
+  TOKEN: 'TOKEN',
+  REQUEST: 'REQUEST',
+};
+
 export const LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT = 'http://localhost:3001';
 
 export const LOCAL_DYNAMO_DB_ENDPOINT = 'http://localhost:5000';
 
 export const TABLE = process.env.TABLE;
 
+export const GSI_FIRST = 'GSI';
+
 export const MOCK_ROOM = '1';
 
-export const START_PK_REG_EXP = /^(.*)_</;
+export const START_PK_REG_EXP = /(^(.*)_%3C)|(^(.*)_<)/;
 
-export const END_PK_REG_EXP = />$/;
+export const END_PK_REG_EXP = /(%3E$)|(>$)/;
 
 export const DB_MAPPER = {
   ENTITY: 'ENTITY',

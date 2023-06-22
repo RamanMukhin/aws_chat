@@ -1,4 +1,5 @@
 import { handlerPath } from '@libs/handler-resolver';
+import { AUTHORIZER_EVENT } from 'src/common/constants';
 
 export default {
   handler: `${handlerPath(__dirname)}/handler.main`,
@@ -9,8 +10,11 @@ export default {
         path: 'rooms',
         authorizer: {
           name: 'authorizer',
-          type: 'TOKEN',
+          type: AUTHORIZER_EVENT.TOKEN,
           identitySource: 'method.request.header.Authorization',
+        },
+        caching: {
+          enabled: false,
         },
       },
     },

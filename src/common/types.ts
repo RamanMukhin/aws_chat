@@ -18,3 +18,8 @@ type EntityWithGSI = Entity & {
 export type Connection = EntityWithGSI & ConnectionData;
 
 export type RoomUser = EntityWithGSI;
+
+export type AUTHORIZER_EVENT_TYPE = {
+  TOKEN: 'TOKEN';
+  REQUEST: 'REQUEST';
+};

@@ -6,7 +6,7 @@ import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 
 import schema from './schema';
 import { DeleteCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { DB_MAPPER, TABLE } from 'src/common/constants';
+import { DB_MAPPER, GSI_FIRST, TABLE } from 'src/common/constants';
 
 const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
@@ -26,7 +26,7 @@ const disconnect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
 
     const queryCommand = new QueryCommand({
       TableName: TABLE,
-      IndexName: 'GSI',
+      IndexName: GSI_FIRST,
       KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
       ExpressionAttributeNames: {
         '#GSI_PK': 'GSI_PK',

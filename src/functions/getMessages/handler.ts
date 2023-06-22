@@ -5,7 +5,7 @@ import { middyfy } from '@libs/lambda';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
 import { QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { DB_MAPPER, END_PK_REG_EXP, TABLE } from 'src/common/constants';
+import { DB_MAPPER, END_PK_REG_EXP, GSI_FIRST, TABLE } from 'src/common/constants';
 import { CustomError } from 'src/common/errors';
 import { checkRoom } from 'src/common/check-room';
 
@@ -24,14 +24,15 @@ const getMessages: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (ev
 
     const queryCommand = new QueryCommand({
       TableName: TABLE,
-      KeyConditionExpression: '#PK = :pk and begins_with(#SK, :sk)',
+      IndexName: GSI_FIRST,
+      KeyConditionExpression: '#GSI_PK = :gsi_pk and begins_with(#GSI_SK, :gsi_sk)',
       ExpressionAttributeNames: {
-        '#PK': 'PK',
-        '#SK': 'SK',
+        '#GSI_PK': 'GSI_PK',
+        '#GSI_SK': 'GSI_SK',
       },
       ExpressionAttributeValues: {
-        ':pk': DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId)),
-        ':sk': DB_MAPPER.USER('').replace(END_PK_REG_EXP, ''),
+        ':gsi_pk': DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId)),
+        ':gsi_sk': DB_MAPPER.MESSAGE('').replace(END_PK_REG_EXP, ''),
       },
     });
 

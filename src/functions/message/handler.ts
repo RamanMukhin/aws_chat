@@ -10,7 +10,7 @@ import { createApiGatewayMangementEndpoint } from 'src/common/utils';
 import { createApiGatewayMangementApiClient } from '@libs/api-gateway-management-api-client';
 import { deleteConnection } from 'src/common/delete-connection';
 import { Connection, RoomUser } from 'src/common/types';
-import { DB_MAPPER, END_PK_REG_EXP, TABLE } from 'src/common/constants';
+import { DB_MAPPER, END_PK_REG_EXP, GSI_FIRST, TABLE } from 'src/common/constants';
 import { CustomError } from 'src/common/errors';
 import { middyfyWS } from '@libs/lambda';
 import { checkRoom } from 'src/common/check-room';
@@ -73,7 +73,7 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
 
     const queryCommandRoomUsers = new QueryCommand({
       TableName: TABLE,
-      IndexName: 'GSI',
+      IndexName: GSI_FIRST,
       KeyConditionExpression: '#GSI_PK = :gsi_pk and begins_with(#GSI_SK, :gsi_sk)',
       ExpressionAttributeNames: {
         '#GSI_PK': 'GSI_PK',
@@ -87,13 +87,13 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
 
     const roomUsers = (await dynamoDBDocumentClient.send(queryCommandRoomUsers)).Items as RoomUser[];
 
-    const connections = await Promise.all(
-      roomUsers.map(async (it) => {
-        const userId = DB_MAPPER.RAW_PK(it.PK);
+    const connections: Connection[] = [];
 
+    await Promise.all(
+      roomUsers.map(async (roomUser) => {
         const queryCommandConnection = new QueryCommand({
           TableName: TABLE,
-          IndexName: 'GSI',
+          IndexName: GSI_FIRST,
           KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
           ExpressionAttributeNames: {
             '#GSI_PK': 'GSI_PK',
@@ -101,13 +101,13 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
           },
           ExpressionAttributeValues: {
             ':gsi_pk': DB_MAPPER.ENTITY,
-            ':gsi_sk': DB_MAPPER.USER(userId),
+            ':gsi_sk': DB_MAPPER.USER(DB_MAPPER.RAW_PK(roomUser.PK)),
           },
         });
 
-        const connections = (await dynamoDBDocumentClient.send(queryCommandConnection)).Items as Connection[];
+        const Items = (await dynamoDBDocumentClient.send(queryCommandConnection)).Items as Connection[];
 
-        return connections && connections[0];
+        return connections.push(...Items);
       }),
     );
 

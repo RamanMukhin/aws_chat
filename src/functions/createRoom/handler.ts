@@ -6,7 +6,7 @@ import { middyfy } from '@libs/lambda';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
 import { TransactWriteCommand, BatchGetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { DB_MAPPER, ROOM_TYPES, TABLE } from 'src/common/constants';
+import { DB_MAPPER, GSI_FIRST, ROOM_TYPES, TABLE } from 'src/common/constants';
 import { CustomError } from 'src/common/errors';
 
 const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
@@ -72,7 +72,7 @@ const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
       const queryCommand = (userId: string, interlocutorId: string) =>
         new QueryCommand({
           TableName: TABLE,
-          IndexName: 'GSI',
+          IndexName: GSI_FIRST,
           KeyConditionExpression: '#GSI_PK = :gsi_pk and #GSI_SK = :gsi_sk',
           ExpressionAttributeNames: {
             '#GSI_PK': 'GSI_PK',

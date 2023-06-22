@@ -1,3 +1,4 @@
+import { AUTHORIZER_EVENT } from 'src/common/constants';
 import schema from './schema';
 import { handlerPath } from '@libs/handler-resolver';
 
@@ -15,7 +16,7 @@ export default {
         },
         authorizer: {
           name: 'authorizer',
-          type: 'TOKEN',
+          type: AUTHORIZER_EVENT.TOKEN,
           identitySource: 'method.request.header.Authorization',
         },
       },
