@@ -23,8 +23,6 @@ const getRooms: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event
       ExclusiveStartKey = await getExclusiveStartKey(queryStringParameters, DB_MAPPER.NAME.USER, DB_MAPPER.NAME.ROOM);
     }
 
-    console.log(1111111111111111111111111111111, ExclusiveStartKey);
-
     const queryCommand = new QueryCommand({
       TableName: TABLE,
       ExclusiveStartKey,
@@ -44,7 +42,7 @@ const getRooms: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event
       last = getLastEvaluatedKey(LastEvaluatedKey);
     }
 
-    return formatJSONResponse({ rooms, last, LastEvaluatedKey });
+    return formatJSONResponse({ rooms, last });
   } catch (err) {
     console.error('ERROR is:    ', err);
     return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
