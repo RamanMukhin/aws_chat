@@ -1,4 +1,5 @@
-import { AUTHORIZER_EVENT_TYPE, DB_MAPPER_TYPE } from './types';
+import { FileExtension, MimeType } from 'file-type';
+import { AUTHORIZER_EVENT_TYPE, DB_MAPPER_TYPE, USER_AVATAR_TYPE } from './types';
 import { getLimit } from './utils';
 
 export const API_VERSION = process.env.API_VERSION || '2018-11-29';
@@ -24,9 +25,17 @@ export const LOCAL_DYNAMO_DB_ENDPOINT = 'http://localhost:5000';
 
 export const TABLE = process.env.TABLE;
 
+export const BUCKET = process.env.BUCKET;
+
+export const USERS_STORAGE_PREFIX = 'users/avatars/';
+
+export const USERS_AVATAR_NAME = 'avatar';
+
 export const GSI_FIRST = 'GSI';
 
 export const MOCK_ROOM = '1';
+
+export const REKOGNITION_MODERATION_LABELS_MIN_CONFIDENCE = 70;
 
 export const START_PK_REG_EXP = /(^(.*)_%3C)|(^(.*)_<)/;
 
@@ -52,4 +61,10 @@ export const DB_MAPPER: DB_MAPPER_TYPE = Object.freeze({
     CONNECTION: 'CONNECTION',
     ENTITY: 'ENTITY',
   },
+});
+
+export const USER_AVATAR: USER_AVATAR_TYPE = Object.freeze({
+  MAX_SIZE: 1024 * 1024 * 5,
+  EXT: new Set<FileExtension>(['jpg', 'png']),
+  MIME: new Set<MimeType>(['image/jpeg', 'image/png']),
 });

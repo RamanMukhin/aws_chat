@@ -1,3 +1,5 @@
+import { MimeType, FileExtension } from 'file-type';
+
 export type ConnectionData = {
   userId?: string;
   username?: string;
@@ -46,4 +48,10 @@ export type DB_MAPPER_TYPE = {
     MESSAGE: 'MESSAGE';
     CONNECTION: 'CONNECTION';
   };
+};
+
+export type USER_AVATAR_TYPE = {
+  MAX_SIZE: number;
+  EXT: Set<FileExtension>;
+  MIME: Set<MimeType>;
 };

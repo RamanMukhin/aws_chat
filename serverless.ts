@@ -9,6 +9,8 @@ import authorizer from '@functions/authorizer';
 import createRoom from '@functions/createRoom';
 import getRooms from '@functions/getRooms';
 import getMessages from '@functions/getMessages';
+import getUser from '@functions/getUser';
+import uploadAvatar from '@functions/uploadAvatar';
 import { GSI_FIRST, STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
@@ -99,6 +101,13 @@ const serverlessConfiguration: AWS = {
           ExplicitAuthFlows: ['ALLOW_REFRESH_TOKEN_AUTH', 'ALLOW_ADMIN_USER_PASSWORD_AUTH'],
         },
       },
+      S3Bucket: {
+        Type: 'AWS::S3::Bucket',
+        DeletionPolicy: 'Retain',
+        Properties: {
+          BucketName: '${sls:stage}-${env:BUCKET}',
+        },
+      },
     },
   },
   provider: {
@@ -112,11 +121,13 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
       TABLE: { Ref: 'Table' },
+      BUCKET: { Ref: 'S3Bucket' },
       USER_POOL_ID: { Ref: 'CognitoUserPool' },
       CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
       // Uncomment for local development
       // ...{
       //   TABLE: '${env:TABLE}',
+      //   BUCKET: '${sls:stage}-${env:BUCKET}',
       //   USER_POOL_ID: '${env:USER_POOL_ID}',
       //   CLIENT_ID: '${env:CLIENT_ID}',
       // },
@@ -168,11 +179,48 @@ const serverlessConfiguration: AWS = {
               'Fn::GetAtt': ['CognitoUserPool', 'Arn'],
             },
           },
+          {
+            Effect: 'Allow',
+            Action: ['s3:ListBucket', 's3:PutObject', 's3:GetObject'],
+            Resource: [
+              {
+                'Fn::GetAtt': ['S3Bucket', 'Arn'],
+              },
+              {
+                'Fn::Join': [
+                  '/',
+                  [
+                    {
+                      'Fn::GetAtt': ['S3Bucket', 'Arn'],
+                    },
+                    '*',
+                  ],
+                ],
+              },
+            ],
+          },
+          {
+            Effect: 'Allow',
+            Action: ['rekognition:DetectModerationLabels'],
+            Resource: '*',
+          },
         ],
       },
     },
   },
-  functions: { connect, disconnect, message, signup, login, authorizer, createRoom, getRooms, getMessages },
+  functions: {
+    connect,
+    disconnect,
+    message,
+    signup,
+    login,
+    authorizer,
+    createRoom,
+    getRooms,
+    getMessages,
+    getUser,
+    uploadAvatar,
+  },
   package: { individually: true },
   custom: {
     esbuild: {
