@@ -61,6 +61,7 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
       Body: Bytes,
       Bucket: BUCKET,
       Key: KeyFileName,
+      ACL: 'private',
     });
 
     await s3Client.send(putObjectCommand);
@@ -71,9 +72,10 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
         PK: DB_MAPPER.USER(userId),
         SK: DB_MAPPER.ENTITY(),
       },
-      UpdateExpression: 'set avatar = :avatar',
+      UpdateExpression: 'set avatar = :avatar, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
         ':avatar': KeyFileName,
+        ':updatedAt': new Date().toISOString(),
       },
     });
 
