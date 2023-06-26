@@ -21,6 +21,7 @@ import { DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
 import { fileTypeFromBuffer } from 'file-type';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@libs/s3-client';
+import { calculateBase64BytesSize } from 'src/common/utils';
 
 const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
@@ -29,6 +30,10 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
 
     let Bytes: Buffer;
+
+    if (calculateBase64BytesSize(event.body.img) > USER_AVATAR.MAX_SIZE) {
+      throw new CustomError('Check img size', httpConstants.HTTP_STATUS_BAD_REQUEST);
+    }
 
     try {
       Bytes = Buffer.from(event.body.img.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');

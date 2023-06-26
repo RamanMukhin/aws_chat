@@ -11,3 +11,10 @@ export const getLimit = (limit: string, MAX_LIMIT: number): number =>
 
 export const getLastEvaluatedKey = (entity: Record<string, any>) =>
   `${DB_MAPPER.RAW_PK(entity.PK)}:${DB_MAPPER.RAW_PK(entity.SK)}`;
+
+export const calculateBase64BytesSize = (base64String: string): number => {
+  const base64 = base64String.substring(base64String.indexOf(',') + 1);
+  const bits = base64.length * 6;
+  const bytes = bits / 8;
+  return Math.ceil(bytes);
+};
