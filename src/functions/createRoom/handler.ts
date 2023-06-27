@@ -66,7 +66,7 @@ const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
 
     let interlocutorId: string;
 
-    if (event.body.type === ROOM_TYPES.PRIVATE) {
+    if (event.body.type === ROOM_TYPES.private) {
       interlocutorId = participants.filter((it) => it !== userId)[0];
 
       const queryCommand = (userId: string, interlocutorId: string) =>
@@ -89,7 +89,7 @@ const createRoom: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
     }
 
     const conditionalRoomData =
-      event.body.type === ROOM_TYPES.PRIVATE
+      event.body.type === ROOM_TYPES.private
         ? {
             GSI_PK: DB_MAPPER.USER(userId),
             GSI_SK: DB_MAPPER.USER(interlocutorId),

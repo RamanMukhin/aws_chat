@@ -1,5 +1,9 @@
 import { format } from 'util';
+import { constants as httpConstants } from 'http2';
 import { DB_MAPPER, LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT, STAGES } from './constants';
+import { CustomError } from './errors';
+import { FILE_REQUIREMENTS_TYPE } from './types';
+import { FileTypeResult } from 'file-type';
 
 export const createApiGatewayMangementEndpoint = (domain: string, stage: string): string => {
   const apiGatewayMangementEndpoint = format(format('https://%s/%s', domain, stage));
@@ -17,4 +21,29 @@ export const calculateBase64BytesSize = (base64String: string): number => {
   const bits = base64.length * 6;
   const bytes = bits / 8;
   return Math.ceil(bytes);
+};
+
+export const createBase64Buffer = (base64String: string): Buffer => {
+  try {
+    const Bytes = Buffer.from(base64String.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
+
+    return Bytes;
+  } catch (err) {
+    throw new CustomError('Check data provided.', httpConstants.HTTP_STATUS_BAD_REQUEST);
+  }
+};
+
+// Cannot import functions dirextly from file-type besause of ESM package
+export const checkFileTypeFromBuffer = async (
+  checker: (buffer: ArrayBuffer | Uint8Array) => Promise<FileTypeResult>,
+  buffer: Buffer,
+  requirements: FILE_REQUIREMENTS_TYPE,
+): Promise<FileTypeResult> => {
+  const { ext, mime } = await checker(buffer);
+
+  if (buffer.byteLength > requirements.MAX_SIZE || !requirements.EXT.has(ext) || !requirements.MIME.has(mime)) {
+    throw new CustomError('Check img requirements', httpConstants.HTTP_STATUS_BAD_REQUEST);
+  }
+
+  return { ext, mime };
 };

@@ -1,0 +1,6 @@
+{
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"roomId\": \"id\",\"type\": \"doc\", \"fileName\": \"test.docx\", \"data\": \"data\"}"
+}

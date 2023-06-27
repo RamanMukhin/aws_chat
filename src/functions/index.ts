@@ -9,4 +9,4 @@ export { default as getRooms } from './getRooms';
 export { default as getMessages } from './getMessages';
 export { default as getUser } from './getUser';
 export { default as uploadAvatar } from './uploadAvatar';
-
+export { default as uploadFile } from './uploadFile';

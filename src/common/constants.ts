@@ -1,5 +1,13 @@
 import { FileExtension, MimeType } from 'file-type';
-import { AUTHORIZER_EVENT_TYPE, DB_MAPPER_TYPE, USER_AVATAR_TYPE } from './types';
+import {
+  AUTHORIZER_EVENT_TYPE,
+  DB_MAPPER_TYPE,
+  FILE_REQUIREMENTS_TYPE,
+  FILE_TYPE,
+  MESSAGE_TYPE,
+  ROOM_FILES_TYPE,
+  ROOM_TYPE,
+} from './types';
 import { getLimit } from './utils';
 
 export const API_VERSION = process.env.API_VERSION || '2018-11-29';
@@ -9,9 +17,21 @@ export const STAGES = Object.freeze({
   DEV: 'dev',
 });
 
-export const ROOM_TYPES = Object.freeze({
-  PRIVATE: 'private',
-  GROUP: 'group',
+export const ROOM_TYPES: Record<ROOM_TYPE, ROOM_TYPE> = Object.freeze({
+  private: 'private',
+  group: 'group',
+});
+
+export const ROOM_FILE_TYPES: Record<FILE_TYPE, FILE_TYPE> = Object.freeze({
+  doc: 'doc',
+  image: 'image',
+  video: 'video',
+  audio: 'audio',
+});
+
+export const MESSAGE_TYPES: Record<MESSAGE_TYPE, MESSAGE_TYPE> = Object.freeze({
+  text: 'text',
+  file: 'file',
 });
 
 export const AUTHORIZER_EVENT: AUTHORIZER_EVENT_TYPE = Object.freeze({
@@ -28,6 +48,8 @@ export const TABLE = process.env.TABLE;
 export const BUCKET = process.env.BUCKET;
 
 export const USERS_STORAGE_PREFIX = 'users/avatars/';
+
+export const ROOMS_STORAGE_PREFIX = 'rooms/content/';
 
 export const USERS_AVATAR_NAME = 'avatar';
 
@@ -63,8 +85,34 @@ export const DB_MAPPER: DB_MAPPER_TYPE = Object.freeze({
   },
 });
 
-export const USER_AVATAR: USER_AVATAR_TYPE = Object.freeze({
+export const USER_AVATAR: FILE_REQUIREMENTS_TYPE = Object.freeze({
   MAX_SIZE: 1024 * 1024 * 5,
   EXT: new Set<FileExtension>(['jpg', 'png']),
   MIME: new Set<MimeType>(['image/jpeg', 'image/png']),
+});
+
+export const ROOM_FILES: ROOM_FILES_TYPE = Object.freeze({
+  doc: {
+    MAX_SIZE: 1024 * 1024 * 50,
+    EXT: new Set<FileExtension>(['docx', 'odt']),
+    MIME: new Set<MimeType>([
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.oasis.opendocument.text',
+    ]),
+  },
+  image: {
+    MAX_SIZE: 1024 * 1024 * 10,
+    EXT: new Set<FileExtension>(['jpg', 'png']),
+    MIME: new Set<MimeType>(['image/jpeg', 'image/png']),
+  },
+  video: {
+    MAX_SIZE: 1024 * 1024 * 1000,
+    EXT: new Set<FileExtension>(['mp4', 'avi']),
+    MIME: new Set<MimeType>(['video/mp4', 'video/mpeg', 'video/vnd.avi']),
+  },
+  audio: {
+    MAX_SIZE: 1024 * 1024 * 100,
+    EXT: new Set<FileExtension>(['mp3', 'flac']),
+    MIME: new Set<MimeType>(['audio/mpeg', 'audio/x-flac']),
+  },
 });

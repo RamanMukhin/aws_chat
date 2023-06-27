@@ -11,6 +11,7 @@ import getRooms from '@functions/getRooms';
 import getMessages from '@functions/getMessages';
 import getUser from '@functions/getUser';
 import uploadAvatar from '@functions/uploadAvatar';
+import uploadFile from '@functions/uploadFile';
 import { GSI_FIRST, STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
@@ -220,6 +221,7 @@ const serverlessConfiguration: AWS = {
     getMessages,
     getUser,
     uploadAvatar,
+    uploadFile,
   },
   package: { individually: true },
   custom: {

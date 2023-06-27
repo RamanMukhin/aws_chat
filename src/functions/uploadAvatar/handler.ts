@@ -6,22 +6,14 @@ import { middyfy } from '@libs/lambda';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import {
-  BUCKET,
-  DB_MAPPER,
-  REKOGNITION_MODERATION_LABELS_MIN_CONFIDENCE,
-  TABLE,
-  USERS_AVATAR_NAME,
-  USERS_STORAGE_PREFIX,
-  USER_AVATAR,
-} from 'src/common/constants';
+import { BUCKET, DB_MAPPER, TABLE, USERS_AVATAR_NAME, USERS_STORAGE_PREFIX, USER_AVATAR } from 'src/common/constants';
 import { CustomError } from 'src/common/errors';
-import { rekognitionClient } from '@libs/rekognition-client';
-import { DetectModerationLabelsCommand } from '@aws-sdk/client-rekognition';
-import { fileTypeFromBuffer } from 'file-type';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@libs/s3-client';
-import { calculateBase64BytesSize } from 'src/common/utils';
+import { calculateBase64BytesSize, checkFileTypeFromBuffer, createBase64Buffer } from 'src/common/utils';
+import { checkImageContent } from 'src/common/moderate-image';
+import { fileTypeFromBuffer } from 'file-type';
+import { rekognitionClient } from '@libs/rekognition-client';
 
 const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
@@ -29,36 +21,15 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
 
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
 
-    let Bytes: Buffer;
-
     if (calculateBase64BytesSize(event.body.img) > USER_AVATAR.MAX_SIZE) {
       throw new CustomError('Check img size', httpConstants.HTTP_STATUS_BAD_REQUEST);
     }
 
-    try {
-      Bytes = Buffer.from(event.body.img.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
-    } catch (err) {
-      throw new CustomError('Check img provided.', httpConstants.HTTP_STATUS_BAD_REQUEST);
-    }
+    const Bytes = createBase64Buffer(event.body.img);
 
-    const { ext, mime } = await fileTypeFromBuffer(Bytes);
+    await checkFileTypeFromBuffer(fileTypeFromBuffer, Bytes, USER_AVATAR);
 
-    if (Bytes.byteLength > USER_AVATAR.MAX_SIZE || !USER_AVATAR.EXT.has(ext) || !USER_AVATAR.MIME.has(mime)) {
-      throw new CustomError('Check img requirements', httpConstants.HTTP_STATUS_BAD_REQUEST);
-    }
-
-    const detectModerationLabelsCommand = new DetectModerationLabelsCommand({
-      Image: { Bytes },
-      MinConfidence: REKOGNITION_MODERATION_LABELS_MIN_CONFIDENCE,
-    });
-
-    let { ModerationLabels } = await rekognitionClient.send(detectModerationLabelsCommand);
-
-    const isValid = !(ModerationLabels && !!ModerationLabels.length);
-
-    if (!isValid) {
-      throw new CustomError('Img content validation failed', httpConstants.HTTP_STATUS_UNPROCESSABLE_ENTITY);
-    }
+    await checkImageContent(rekognitionClient, Bytes);
 
     const KeyFileName = join(`${USERS_STORAGE_PREFIX}/${userId}/${USERS_AVATAR_NAME}`);
 

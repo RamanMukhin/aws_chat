@@ -9,25 +9,29 @@ export default {
       items: { type: 'string' },
     },
     name: { type: 'string' },
-    if: {
-      properties: { type: { enum: [ROOM_TYPES.PRIVATE] } },
-    },
-    then: {
-      properties: {
-        participants: {
-          minItems: 1,
-          maxItems: 1,
-        },
-      },
-    },
-    else: {
-      properties: {
-        participants: {
-          minItems: 1,
-        },
-      },
-      required: ['type', 'participants', 'name'],
-    },
   },
   required: ['type', 'participants'],
+  // if: {
+  //   properties: { type: { const: ROOM_TYPES.private } },
+  // },
+  // then: {
+  //   properties: {
+  //     participants: {
+  //       type: 'array',
+  //       items: { type: 'string' },
+  //       minItems: 1,
+  //       maxItems: 1,
+  //     },
+  //   },
+  // },
+  // else: {
+  //   properties: {
+  //     participants: {
+  //       type: 'array',
+  //       items: { type: 'string' },
+  //       minItems: 1,
+  //     },
+  //   },
+  //   required: ['type', 'participants', 'name'],
+  // },
 } as const;

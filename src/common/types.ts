@@ -7,6 +7,12 @@ export type ConnectionData = {
   disconnectAt?: string;
 };
 
+export type ROOM_TYPE = 'private' | 'group';
+
+export type FILE_TYPE = 'doc' | 'image' | 'video' | 'audio';
+
+export type MESSAGE_TYPE = 'text' | 'file';
+
 export type DB_ENTITY_NAME = 'USER' | 'ROOM' | 'MESSAGE' | 'CONNECTION' | 'ENTITY';
 
 export type Entity = {
@@ -50,8 +56,10 @@ export type DB_MAPPER_TYPE = {
   };
 };
 
-export type USER_AVATAR_TYPE = {
+export type FILE_REQUIREMENTS_TYPE = {
   MAX_SIZE: number;
   EXT: Set<FileExtension>;
   MIME: Set<MimeType>;
 };
+
+export type ROOM_FILES_TYPE = Record<FILE_TYPE, FILE_REQUIREMENTS_TYPE>;
