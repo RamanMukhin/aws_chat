@@ -47,6 +47,10 @@ export const TABLE = process.env.TABLE;
 
 export const BUCKET = process.env.BUCKET;
 
+export const REKOGNITION_MODERATION_VIDEO_SNS_TOPIC = process.env.REKOGNITION_MODERATION_VIDEO_SNS_TOPIC;
+
+export const REKOGNITION_MODERATION_VIDEO_ROLE = process.env.REKOGNITION_MODERATION_VIDEO_ROLE;
+
 export const USERS_STORAGE_PREFIX = 'users/avatars/';
 
 export const ROOMS_STORAGE_PREFIX = 'rooms/content/';
@@ -58,6 +62,8 @@ export const GSI_FIRST = 'GSI';
 export const MOCK_ROOM = '1';
 
 export const REKOGNITION_MODERATION_LABELS_MIN_CONFIDENCE = 70;
+
+export const REKOGNITION_MODERATION_VIDEO_MIN_CONFIDENCE = 70;
 
 export const START_PK_REG_EXP = /(^(.*)_%3C)|(^(.*)_<)/;
 

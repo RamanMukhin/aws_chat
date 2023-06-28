@@ -32,9 +32,7 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
 
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
     const { roomId, type, fileName, data } = event.body;
-    const KeyFileName = join(
-      `${ROOMS_STORAGE_PREFIX}/${type}/${DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId))}/${uuidv4()}/${fileName}`,
-    );
+    const KeyFileName = join(`${ROOMS_STORAGE_PREFIX}/${type}/${DB_MAPPER.RAW_PK(roomId)}/${uuidv4()}/${fileName}`);
 
     await checkRoom(roomId, userId);
 

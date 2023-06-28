@@ -12,6 +12,7 @@ import getMessages from '@functions/getMessages';
 import getUser from '@functions/getUser';
 import uploadAvatar from '@functions/uploadAvatar';
 import uploadFile from '@functions/uploadFile';
+import moderateVideo from '@functions/moderateVideo';
 import { GSI_FIRST, STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
@@ -109,6 +110,53 @@ const serverlessConfiguration: AWS = {
           BucketName: '${sls:stage}-${env:BUCKET}',
         },
       },
+      RekognitionSNSTopic: {
+        Type: 'AWS::SNS::Topic',
+        Properties: {
+          DisplayName: '${sls:stage}-${env:REKOGNITION_MODERATION_VIDEO_SNS_TOPIC}',
+        },
+      },
+      RekognitionEventRole: {
+        Type: 'AWS::IAM::Role',
+        Properties: {
+          AssumeRolePolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: {
+                  Service: ['rekognition.amazonaws.com'],
+                },
+                Action: ['sts:AssumeRole'],
+              },
+            ],
+          },
+        },
+      },
+      RekognitionEventPolicy: {
+        Type: 'AWS::IAM::Policy',
+        Properties: {
+          PolicyName: '${sls:stage}-rekognition-event-policy',
+          PolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Action: ['lambda:InvokeFunction'],
+                Resource: [
+                  {
+                    'Fn::GetAtt': [
+                      moderateVideo.name[0].toUpperCase() + moderateVideo.name.slice(1) + 'LambdaFunction',
+                      'Arn',
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          Roles: [{ Ref: 'RekognitionEventRole' }],
+        },
+      },
     },
   },
   provider: {
@@ -123,6 +171,10 @@ const serverlessConfiguration: AWS = {
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
       TABLE: { Ref: 'Table' },
       BUCKET: { Ref: 'S3Bucket' },
+      REKOGNITION_MODERATION_VIDEO_SNS_TOPIC: { Ref: 'RekognitionSNSTopic' },
+      REKOGNITION_MODERATION_VIDEO_ROLE: {
+        'Fn::GetAtt': ['RekognitionEventRole', 'Arn'],
+      },
       USER_POOL_ID: { Ref: 'CognitoUserPool' },
       CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
       // Uncomment for local development
@@ -162,7 +214,7 @@ const serverlessConfiguration: AWS = {
                     'Fn::GetAtt': ['Table', 'Arn'],
                   },
                   'index',
-                  'GSI',
+                  GSI_FIRST,
                 ],
               ],
             },
@@ -202,8 +254,15 @@ const serverlessConfiguration: AWS = {
           },
           {
             Effect: 'Allow',
-            Action: ['rekognition:DetectModerationLabels'],
+            Action: ['rekognition:DetectModerationLabels', 'rekognition:StartContentModeration'],
             Resource: '*',
+          },
+          {
+            Effect: 'Allow',
+            Action: ['iam:PassRole'],
+            Resource: {
+              'Fn::GetAtt': ['RekognitionEventRole', 'Arn'],
+            },
           },
         ],
       },
@@ -222,6 +281,7 @@ const serverlessConfiguration: AWS = {
     getUser,
     uploadAvatar,
     uploadFile,
+    moderateVideo,
   },
   package: { individually: true },
   custom: {
