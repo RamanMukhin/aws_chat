@@ -5,8 +5,16 @@ import { CustomError } from './errors';
 import { FILE_REQUIREMENTS_TYPE } from './types';
 import { FileTypeResult } from 'file-type';
 
-export const createApiGatewayMangementEndpoint = (domain: string, stage: string): string => {
-  const apiGatewayMangementEndpoint = format(format('https://%s/%s', domain, stage));
+export const createApiGatewayMangementEndpoint = (
+  domain: string,
+  stage: string,
+  apiId?: string,
+  region?: string,
+): string => {
+  const apiGatewayMangementEndpoint =
+    apiId && region
+      ? format(format('https://%s.execute-api.%s.amazonaws.com/%s', apiId, region, stage))
+      : format(format('https://%s/%s', domain, stage));
   return stage === STAGES.LOCAL ? LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT : apiGatewayMangementEndpoint;
 };
 

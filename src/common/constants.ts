@@ -5,6 +5,7 @@ import {
   FILE_REQUIREMENTS_TYPE,
   FILE_TYPE,
   MESSAGE_TYPE,
+  MODERATION_STATUS_TYPE,
   ROOM_FILES_TYPE,
   ROOM_TYPE,
 } from './types';
@@ -34,6 +35,12 @@ export const MESSAGE_TYPES: Record<MESSAGE_TYPE, MESSAGE_TYPE> = Object.freeze({
   file: 'file',
 });
 
+export const MODERATION_STATUS_TYPES: Record<MODERATION_STATUS_TYPE, MODERATION_STATUS_TYPE> = Object.freeze({
+  IN_PROGRESS: 'IN_PROGRESS',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+});
+
 export const AUTHORIZER_EVENT: AUTHORIZER_EVENT_TYPE = Object.freeze({
   TOKEN: 'TOKEN',
   REQUEST: 'REQUEST',
@@ -50,6 +57,12 @@ export const BUCKET = process.env.BUCKET;
 export const REKOGNITION_MODERATION_VIDEO_SNS_TOPIC = process.env.REKOGNITION_MODERATION_VIDEO_SNS_TOPIC;
 
 export const REKOGNITION_MODERATION_VIDEO_ROLE = process.env.REKOGNITION_MODERATION_VIDEO_ROLE;
+
+export const WEBSOCKET_API_ID = process.env.WEBSOCKET_API_ID
+
+export const REGION = process.env.REGION;
+
+export const STAGE = process.env.STAGE;
 
 export const USERS_STORAGE_PREFIX = 'users/avatars/';
 

@@ -13,6 +13,7 @@ import getUser from '@functions/getUser';
 import uploadAvatar from '@functions/uploadAvatar';
 import uploadFile from '@functions/uploadFile';
 import moderateVideo from '@functions/moderateVideo';
+import videoModerationResultHandler from '@functions/videoModerationResultHandler';
 import { GSI_FIRST, STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
@@ -113,6 +114,7 @@ const serverlessConfiguration: AWS = {
       RekognitionSNSTopic: {
         Type: 'AWS::SNS::Topic',
         Properties: {
+          TopicName: '${sls:stage}-${env:REKOGNITION_MODERATION_VIDEO_SNS_TOPIC}',
           DisplayName: '${sls:stage}-${env:REKOGNITION_MODERATION_VIDEO_SNS_TOPIC}',
         },
       },
@@ -142,15 +144,8 @@ const serverlessConfiguration: AWS = {
             Statement: [
               {
                 Effect: 'Allow',
-                Action: ['lambda:InvokeFunction'],
-                Resource: [
-                  {
-                    'Fn::GetAtt': [
-                      moderateVideo.name[0].toUpperCase() + moderateVideo.name.slice(1) + 'LambdaFunction',
-                      'Arn',
-                    ],
-                  },
-                ],
+                Action: ['sns:publish'],
+                Resource: { Ref: 'RekognitionSNSTopic' },
               },
             ],
           },
@@ -177,6 +172,11 @@ const serverlessConfiguration: AWS = {
       },
       USER_POOL_ID: { Ref: 'CognitoUserPool' },
       CLIENT_ID: { Ref: 'CognitoUserPoolClient' },
+      WEBSOCKET_API_ID: {
+        Ref: 'WebsocketsApi',
+      },
+      REGION: '${aws:region}',
+      STAGE: '${sls:stage}',
       // Uncomment for local development
       // ...{
       //   TABLE: '${env:TABLE}',
@@ -234,7 +234,7 @@ const serverlessConfiguration: AWS = {
           },
           {
             Effect: 'Allow',
-            Action: ['s3:ListBucket', 's3:PutObject', 's3:GetObject'],
+            Action: ['s3:ListBucket', 's3:PutObject', 's3:GetObject', 's3:DeleteObject'],
             Resource: [
               {
                 'Fn::GetAtt': ['S3Bucket', 'Arn'],
@@ -282,6 +282,7 @@ const serverlessConfiguration: AWS = {
     uploadAvatar,
     uploadFile,
     moderateVideo,
+    videoModerationResultHandler,
   },
   package: { individually: true },
   custom: {

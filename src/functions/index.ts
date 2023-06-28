@@ -11,3 +11,4 @@ export { default as getUser } from './getUser';
 export { default as uploadAvatar } from './uploadAvatar';
 export { default as uploadFile } from './uploadFile';
 export { default as moderateVideo } from './moderateVideo';
+export { default as videoModerationResultHandler } from './videoModerationResultHandler';

@@ -10,9 +10,11 @@ import {
   BUCKET,
   DB_MAPPER,
   MESSAGE_TYPES,
+  REGION,
   ROOMS_STORAGE_PREFIX,
   ROOM_FILES,
   ROOM_FILE_TYPES,
+  WEBSOCKET_API_ID,
 } from 'src/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
@@ -33,6 +35,7 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
     const { roomId, type, fileName, data } = event.body;
     const KeyFileName = join(`${ROOMS_STORAGE_PREFIX}/${type}/${DB_MAPPER.RAW_PK(roomId)}/${uuidv4()}/${fileName}`);
+    const Metadata = { fileName, userId, roomId, KeyFileName }
 
     await checkRoom(roomId, userId);
 
@@ -41,7 +44,7 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
         Bucket: BUCKET,
         Key: KeyFileName,
         ACL: 'private',
-        Metadata: { fileName },
+        Metadata,
       });
 
       const url = await getSignedUrl(s3Client, putObjectCommand, { expiresIn: 1200 });
@@ -62,7 +65,7 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
       Bucket: BUCKET,
       Key: KeyFileName,
       ACL: 'private',
-      Metadata: { fileName },
+      Metadata,
     });
 
     await s3Client.send(putObjectCommand);
@@ -72,7 +75,7 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
     const {
       requestContext: { domainName, stage },
     } = event;
-    const endpoint = createApiGatewayMangementEndpoint(domainName, stage);
+    const endpoint = createApiGatewayMangementEndpoint(domainName, stage, WEBSOCKET_API_ID, REGION);
     const apiGatewayMangementApiClient = createApiGatewayMangementApiClient(endpoint);
 
     // TODO: FIX MESSAGE SENDING

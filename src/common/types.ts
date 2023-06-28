@@ -15,6 +15,8 @@ export type MESSAGE_TYPE = 'text' | 'file';
 
 export type DB_ENTITY_NAME = 'USER' | 'ROOM' | 'MESSAGE' | 'CONNECTION' | 'ENTITY';
 
+export type MODERATION_STATUS_TYPE = 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED';
+
 export type Entity = {
   PK: string;
   SK: string;
