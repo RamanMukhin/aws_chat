@@ -62,7 +62,10 @@ const getMessages: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (ev
     return formatJSONResponse({ messages, last });
   } catch (err) {
     console.error('ERROR is:    ', err);
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

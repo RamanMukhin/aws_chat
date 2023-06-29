@@ -53,7 +53,10 @@ const signup: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) 
       console.error('Error while deleting incorrectly created user:  ', err);
     }
 
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

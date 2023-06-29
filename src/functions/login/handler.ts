@@ -62,12 +62,15 @@ const login: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) =
     return formatJSONResponse({ AuthenticationResult: response.AuthenticationResult });
   } catch (err) {
     console.error('ERROR is:    ', err);
-    
+
     if (err?.$metadata.httpStatusCode === httpConstants.HTTP_STATUS_BAD_REQUEST) {
       return formatJSONResponse({ message: 'Unauthorized' }, httpConstants.HTTP_STATUS_UNAUTHORIZED);
     }
 
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

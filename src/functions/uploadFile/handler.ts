@@ -12,18 +12,18 @@ import {
   MESSAGE_TYPES,
   MODERATION_STATUS_TYPES,
   ROOMS_STORAGE_PREFIX,
-  ROOM_FILES,
+  ROOM_FILES_REQUIREMENTS,
   ROOM_FILE_TYPES,
 } from 'src/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@libs/s3-client';
 import { checkRoom } from 'src/common/check-room';
-import { checkFileTypeFromBuffer, createBase64Buffer } from 'src/common/utils';
-import { checkImageContent } from 'src/common/moderate-image';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { rekognitionClient } from '@libs/rekognition-client';
 import { saveAndSendMessage } from 'src/common/save-and-send-message';
+import { checkFileAndUploadToS3 } from 'src/common/upload-file-to-s3';
+import { RekognitionClient } from '@aws-sdk/client-rekognition';
 
 const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
@@ -32,7 +32,7 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
     const { roomId, type, fileName, data } = event.body;
     const Key = join(`${ROOMS_STORAGE_PREFIX}/${type}/${DB_MAPPER.RAW_PK(roomId)}/${uuidv4()}/${fileName}`);
-    const Metadata = { fileName, userId, roomId, keyFileName: Key };
+    const Metadata = { fileName, userId, roomId, Key };
 
     await checkRoom(roomId, userId);
 
@@ -44,29 +44,31 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
       return formatJSONResponse({ url });
     }
 
-    const Bytes = createBase64Buffer(data);
+    const imageModerator: [boolean, RekognitionClient | null] =
+      type === ROOM_FILE_TYPES.image ? [true, rekognitionClient] : [false, null];
 
-    await checkFileTypeFromBuffer(fileTypeFromBuffer, Bytes, ROOM_FILES[type]);
-
-    if (type === ROOM_FILE_TYPES.image) {
-      await checkImageContent(rekognitionClient, Bytes);
-    }
-
-    const putObjectCommand = new PutObjectCommand({ Body: Bytes, Bucket: BUCKET, Key, ACL: 'private', Metadata });
-
-    await s3Client.send(putObjectCommand);
-
-    const moderationStatus = MODERATION_STATUS_TYPES.SUCCEEDED;
+    await checkFileAndUploadToS3(
+      s3Client,
+      data,
+      Key,
+      Metadata,
+      ROOM_FILES_REQUIREMENTS[type],
+      fileTypeFromBuffer,
+      ...imageModerator,
+    );
 
     await saveAndSendMessage(dynamoDBDocumentClient, roomId, userId, MESSAGE_TYPES.file, {
       data: Key,
-      moderationStatus,
+      moderationStatus: MODERATION_STATUS_TYPES.SUCCEEDED,
     });
 
     return formatJSONResponse({ message: 'success' }, httpConstants.HTTP_STATUS_CREATED);
   } catch (err) {
     console.error('ERROR is:    ', err);
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

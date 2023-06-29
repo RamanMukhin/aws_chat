@@ -2,11 +2,11 @@ import { SNSEvent } from 'aws-lambda';
 import { constants as httpConstants } from 'http2';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { MODERATION_STATUS_TYPE } from 'src/common/types';
-import { BUCKET, MESSAGE_TYPES, MODERATION_STATUS_TYPES } from 'src/common/constants';
-import { DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { BUCKET, MODERATION_STATUS_TYPES } from 'src/common/constants';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@libs/s3-client';
 import { dynamoDBDocumentClient } from '@libs/dynamo-db-doc-client';
-import { saveAndSendMessage } from 'src/common/save-and-send-message';
+import { handleUploadedFile } from 'src/common/handle-uploaded-file';
 
 const videoModerationResultHandler = async (event: SNSEvent) => {
   try {
@@ -22,21 +22,9 @@ const videoModerationResultHandler = async (event: SNSEvent) => {
           return;
         }
 
-        const headObjectCommand = new HeadObjectCommand({ Bucket: BUCKET, Key });
+        const failReason = moderationStatus === MODERATION_STATUS_TYPES.FAILED ? rekognitionMessage.Message : undefined;
 
-        const { Metadata } = await s3Client.send(headObjectCommand);
-
-        console.log('File Metadata is   :', Metadata);
-
-        const { roomid: roomId, userid: userId } = Metadata;
-
-        const failReason = MODERATION_STATUS_TYPES.FAILED ? rekognitionMessage.Message : undefined;
-
-        await saveAndSendMessage(dynamoDBDocumentClient, roomId, userId, MESSAGE_TYPES.file, {
-          data: Key,
-          moderationStatus,
-          failReason,
-        });
+        await handleUploadedFile(s3Client, dynamoDBDocumentClient, Key, moderationStatus, failReason);
 
         if (moderationStatus === MODERATION_STATUS_TYPES.FAILED) {
           const deleteObjectCommand = new DeleteObjectCommand({ Bucket: BUCKET, Key });
@@ -46,10 +34,13 @@ const videoModerationResultHandler = async (event: SNSEvent) => {
       }),
     );
 
-    return formatJSONResponse({ message: 'success' });
+    return formatJSONResponse();
   } catch (err) {
     console.error('ERROR is:    ', err);
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

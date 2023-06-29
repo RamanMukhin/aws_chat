@@ -6,36 +6,36 @@ import { middyfy } from '@libs/lambda';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { BUCKET, DB_MAPPER, TABLE, USERS_AVATAR_NAME, USERS_STORAGE_PREFIX, USER_AVATAR } from 'src/common/constants';
-import { CustomError } from 'src/common/errors';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  DB_MAPPER,
+  TABLE,
+  USERS_AVATAR_NAME,
+  USERS_STORAGE_PREFIX,
+  USER_AVATAR_REQUIREMENTS,
+} from 'src/common/constants';
 import { s3Client } from '@libs/s3-client';
-import { calculateBase64BytesSize, checkFileTypeFromBuffer, createBase64Buffer } from 'src/common/utils';
-import { checkImageContent } from 'src/common/moderate-image';
 import { fileTypeFromBuffer } from 'file-type';
 import { rekognitionClient } from '@libs/rekognition-client';
+import { checkFileAndUploadToS3 } from 'src/common/upload-file-to-s3';
 
 const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
     console.log('Incoming event into uploadAvatar is:   ', event);
 
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
-
-    if (calculateBase64BytesSize(event.body.img) > USER_AVATAR.MAX_SIZE) {
-      throw new CustomError('Check img size', httpConstants.HTTP_STATUS_BAD_REQUEST);
-    }
-
-    const Bytes = createBase64Buffer(event.body.img);
-
-    await checkFileTypeFromBuffer(fileTypeFromBuffer, Bytes, USER_AVATAR);
-
-    await checkImageContent(rekognitionClient, Bytes);
-
     const Key = join(`${USERS_STORAGE_PREFIX}/${userId}/${USERS_AVATAR_NAME}`);
+    const Metadata = { userId, Key };
 
-    const putObjectCommand = new PutObjectCommand({ Body: Bytes, Bucket: BUCKET, Key, ACL: 'private' });
-
-    await s3Client.send(putObjectCommand);
+    await checkFileAndUploadToS3(
+      s3Client,
+      event.body.img,
+      Key,
+      Metadata,
+      USER_AVATAR_REQUIREMENTS,
+      fileTypeFromBuffer,
+      true,
+      rekognitionClient,
+    );
 
     const updateCommand = new UpdateCommand({
       TableName: TABLE,
@@ -55,7 +55,10 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
     return formatJSONResponse({ message: 'success' }, httpConstants.HTTP_STATUS_CREATED);
   } catch (err) {
     console.error('ERROR is:    ', err);
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

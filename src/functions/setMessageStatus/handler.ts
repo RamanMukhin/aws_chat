@@ -95,7 +95,10 @@ const setMessageStatus: ValidatedEventAPIGatewayProxyEvent<typeof schema> = asyn
     return formatJSONResponse();
   } catch (err) {
     console.error('ERROR is:    ', err);
-    return formatJSONResponse({ message: err.message }, httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    return formatJSONResponse(
+      { message: err.message },
+      err.statusCode ?? httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    );
   }
 };
 

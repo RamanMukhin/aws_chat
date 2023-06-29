@@ -116,13 +116,13 @@ export const DB_MAPPER: DB_MAPPER_TYPE = Object.freeze({
   },
 });
 
-export const USER_AVATAR: FILE_REQUIREMENTS_TYPE = Object.freeze({
+export const USER_AVATAR_REQUIREMENTS: FILE_REQUIREMENTS_TYPE = Object.freeze({
   MAX_SIZE: 1024 * 1024 * 5,
   EXT: new Set<FileExtension>(['jpg', 'png']),
   MIME: new Set<MimeType>(['image/jpeg', 'image/png']),
 });
 
-export const ROOM_FILES: ROOM_FILES_TYPE = Object.freeze({
+export const ROOM_FILES_REQUIREMENTS: ROOM_FILES_TYPE = Object.freeze({
   doc: {
     MAX_SIZE: 1024 * 1024 * 50,
     EXT: new Set<FileExtension>(['docx', 'odt']),

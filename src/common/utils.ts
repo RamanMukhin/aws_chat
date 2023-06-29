@@ -44,12 +44,12 @@ export const createBase64Buffer = (base64String: string): Buffer => {
 };
 
 // Cannot import functions dirextly from file-type besause of ESM package
-export const checkFileTypeFromBuffer = async (
-  checker: (buffer: ArrayBuffer | Uint8Array) => Promise<FileTypeResult>,
+export const checkFileFromBuffer = async (
+  fileTypeChecker: (buffer: ArrayBuffer | Uint8Array) => Promise<FileTypeResult>,
   buffer: Buffer,
   requirements: FILE_REQUIREMENTS_TYPE,
 ): Promise<FileTypeResult> => {
-  const { ext, mime } = await checker(buffer);
+  const { ext, mime } = await fileTypeChecker(buffer);
 
   if (buffer.byteLength > requirements.MAX_SIZE || !requirements.EXT.has(ext) || !requirements.MIME.has(mime)) {
     throw new CustomError('Check img requirements', httpConstants.HTTP_STATUS_BAD_REQUEST);
