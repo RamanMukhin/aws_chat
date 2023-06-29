@@ -1,5 +1,5 @@
 import { DB_MAPPER, END_PK_REG_EXP, GSI_FIRST, TABLE } from './constants';
-import { Connection, RoomUser } from './types';
+import { Connection, RoomUser, WEBSOCKET_EVENT_DATA_TYPE } from './types';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { postToConnections } from './post-to-connections';
 import { ApiGatewayManagementApiClient } from '@aws-sdk/client-apigatewaymanagementapi';
@@ -8,7 +8,7 @@ export const postMessageToRoom = async (
   apiGatewayManagementApiClient: ApiGatewayManagementApiClient,
   dynamoDBDocumentClient: DynamoDBDocumentClient,
   roomId: string,
-  message: any,
+  message: WEBSOCKET_EVENT_DATA_TYPE,
 ): Promise<void> => {
   const queryCommandRoomUsers = new QueryCommand({
     TableName: TABLE,

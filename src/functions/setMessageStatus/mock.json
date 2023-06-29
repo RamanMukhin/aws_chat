@@ -1,0 +1,6 @@
+{
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"action\":\"messageStatus\",\"roomId\":\"ROOM_<99beb823-32df-4e7f-b89c-a7345929c0c9>\",\"messageIds\":[\"MESSAGE_<01e209eb-4e8d-46a0-b2ff-a071ea33f4b8>\"],\"status\":\"delivered\"}"
+}

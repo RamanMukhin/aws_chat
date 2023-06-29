@@ -2,5 +2,5 @@
   "headers": {
     "Content-Type": "application/json"
   },
-  "body": "{\"name\": \"Frederic\"}"
+  "body": "{\"action\":\"message\",\"roomId\":\"ROOM_<99beb823-32df-4e7f-b89c-a7345929c0c9>\",\"message\":\"Hello!\"}"
 }

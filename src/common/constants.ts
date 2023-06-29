@@ -4,10 +4,12 @@ import {
   DB_MAPPER_TYPE,
   FILE_REQUIREMENTS_TYPE,
   FILE_TYPE,
+  MESSAGE_STATUS_TYPE,
   MESSAGE_TYPE,
   MODERATION_STATUS_TYPE,
   ROOM_FILES_TYPE,
   ROOM_TYPE,
+  WEBSOCKET_EVENT_TYPE,
 } from './types';
 import { getLimit } from './utils';
 
@@ -35,6 +37,16 @@ export const MESSAGE_TYPES: Record<MESSAGE_TYPE, MESSAGE_TYPE> = Object.freeze({
   file: 'file',
 });
 
+export const MESSAGE_STATUS_TYPES: Record<MESSAGE_STATUS_TYPE, MESSAGE_STATUS_TYPE> = Object.freeze({
+  delivered: 'delivered',
+  opened: 'opened',
+});
+
+export const WEBSOCKET_EVENT_TYPES: Record<WEBSOCKET_EVENT_TYPE, WEBSOCKET_EVENT_TYPE> = Object.freeze({
+  newMessage: 'newMessage',
+  messageStatusUpdated: 'messageStatusUpdated',
+});
+
 export const MODERATION_STATUS_TYPES: Record<MODERATION_STATUS_TYPE, MODERATION_STATUS_TYPE> = Object.freeze({
   IN_PROGRESS: 'IN_PROGRESS',
   SUCCEEDED: 'SUCCEEDED',
@@ -58,7 +70,7 @@ export const REKOGNITION_MODERATION_VIDEO_SNS_TOPIC = process.env.REKOGNITION_MO
 
 export const REKOGNITION_MODERATION_VIDEO_ROLE = process.env.REKOGNITION_MODERATION_VIDEO_ROLE;
 
-export const WEBSOCKET_API_ID = process.env.WEBSOCKET_API_ID
+export const WEBSOCKET_API_ID = process.env.WEBSOCKET_API_ID;
 
 export const REGION = process.env.REGION;
 

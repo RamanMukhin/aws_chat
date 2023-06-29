@@ -21,8 +21,10 @@ export const createApiGatewayMangementEndpoint = (
 export const getLimit = (limit: string, MAX_LIMIT: number): number =>
   !limit || isNaN(+limit) || !+limit || +limit > MAX_LIMIT ? MAX_LIMIT : +limit;
 
-export const getLastEvaluatedKey = (entity: Record<string, any>) =>
+export const getLastEvaluatedKey = (entity: Record<string, any>): string =>
   `${DB_MAPPER.RAW_PK(entity.PK)}:${DB_MAPPER.RAW_PK(entity.SK)}`;
+
+export const isTokenExpired = (disconnectAt: string): boolean => disconnectAt && Date.now() - +disconnectAt * 1000 >= 0;
 
 export const calculateBase64BytesSize = (base64String: string): number => {
   const base64 = base64String.substring(base64String.indexOf(',') + 1);

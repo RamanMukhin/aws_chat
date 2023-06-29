@@ -14,6 +14,7 @@ import uploadAvatar from '@functions/uploadAvatar';
 import uploadFile from '@functions/uploadFile';
 import moderateVideo from '@functions/moderateVideo';
 import videoModerationResultHandler from '@functions/videoModerationResultHandler';
+import setMessageStatus from '@functions/setMessageStatus';
 import { GSI_FIRST, STAGES } from 'src/common/constants';
 
 const serverlessConfiguration: AWS = {
@@ -283,6 +284,7 @@ const serverlessConfiguration: AWS = {
     uploadFile,
     moderateVideo,
     videoModerationResultHandler,
+    setMessageStatus,
   },
   package: { individually: true },
   custom: {

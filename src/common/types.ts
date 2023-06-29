@@ -13,6 +13,10 @@ export type FILE_TYPE = 'doc' | 'image' | 'video' | 'audio';
 
 export type MESSAGE_TYPE = 'text' | 'file';
 
+export type MESSAGE_STATUS_TYPE = 'delivered' | 'opened';
+
+export type WEBSOCKET_EVENT_TYPE = 'newMessage' | 'messageStatusUpdated';
+
 export type DB_ENTITY_NAME = 'USER' | 'ROOM' | 'MESSAGE' | 'CONNECTION' | 'ENTITY';
 
 export type MODERATION_STATUS_TYPE = 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED';
@@ -36,6 +40,17 @@ export type RoomUser = EntityWithGSI;
 export type AUTHORIZER_EVENT_TYPE = {
   TOKEN: 'TOKEN';
   REQUEST: 'REQUEST';
+};
+
+export type MESSAGE_DATA_TYPE = {
+  data: string;
+  moderationStatus?: MODERATION_STATUS_TYPE;
+  failReason?: string;
+};
+
+export type WEBSOCKET_EVENT_DATA_TYPE = {
+  type: WEBSOCKET_EVENT_TYPE;
+  data: Record<string, any>;
 };
 
 export type DB_MAPPER_TYPE = {

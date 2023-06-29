@@ -3,7 +3,7 @@ import type { ValidatedEventAPIGatewayProxyEvent } from '@libs/api-gateway';
 import { formatJSONResponse } from '@libs/api-gateway';
 import { dynamoDBDocumentClient } from '../../libs/dynamo-db-doc-client';
 import schema from './schema';
-import { createApiGatewayMangementEndpoint } from 'src/common/utils';
+import { createApiGatewayMangementEndpoint, isTokenExpired } from 'src/common/utils';
 import { createApiGatewayMangementApiClient } from '@libs/api-gateway-management-api-client';
 import { deleteConnection } from 'src/common/delete-connection';
 import { MESSAGE_TYPES } from 'src/common/constants';
@@ -19,7 +19,7 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
     const [userId, , disconnectAt]: string | undefined = event.requestContext?.authorizer?.principalId.split(' ');
     const endpoint = createApiGatewayMangementEndpoint(event.requestContext.domainName, event.requestContext.stage);
 
-    if (disconnectAt && Date.now() - +disconnectAt * 1000 >= 0) {
+    if (isTokenExpired(disconnectAt)) {
       console.error('TOKEN EXPIRED.');
 
       const apiGatewayManagementApiClient = createApiGatewayMangementApiClient(endpoint);
@@ -31,8 +31,8 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
 
     const { roomId, message: messageData } = event.body;
 
-    if (!roomId || !messageData) {
-      throw new CustomError('Room or message was not specified', httpConstants.HTTP_STATUS_BAD_REQUEST);
+    if (typeof roomId !== 'string' || typeof messageData !== 'string') {
+      throw new CustomError('Room or message was not specified or incorrect', httpConstants.HTTP_STATUS_BAD_REQUEST);
     }
 
     await checkRoom(roomId, userId);

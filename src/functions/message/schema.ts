@@ -4,4 +4,5 @@ export default {
     roomId: { type: 'string' },
     message: { type: 'string' },
   },
+  required: ['roomId', 'message'],
 } as const;

@@ -1,14 +1,14 @@
 import { ApiGatewayManagementApiClient, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
 import { DeleteCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { deleteConnection } from './delete-connection';
-import { Connection } from './types';
+import { Connection, WEBSOCKET_EVENT_DATA_TYPE } from './types';
 import { DB_MAPPER, TABLE } from './constants';
 
 export const postToConnections = (
   apiGatewayManagementApiClient: ApiGatewayManagementApiClient,
   dynamoDBDocumentClient: DynamoDBDocumentClient,
   connections: Connection[],
-  data: any,
+  data: WEBSOCKET_EVENT_DATA_TYPE,
 ): Promise<void>[] => {
   return connections.map(async ({ PK: connectionIdPK, disconnectAt }: Connection) => {
     try {
