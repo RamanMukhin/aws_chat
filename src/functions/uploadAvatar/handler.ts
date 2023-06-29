@@ -31,14 +31,9 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
 
     await checkImageContent(rekognitionClient, Bytes);
 
-    const KeyFileName = join(`${USERS_STORAGE_PREFIX}/${userId}/${USERS_AVATAR_NAME}`);
+    const Key = join(`${USERS_STORAGE_PREFIX}/${userId}/${USERS_AVATAR_NAME}`);
 
-    const putObjectCommand = new PutObjectCommand({
-      Body: Bytes,
-      Bucket: BUCKET,
-      Key: KeyFileName,
-      ACL: 'private',
-    });
+    const putObjectCommand = new PutObjectCommand({ Body: Bytes, Bucket: BUCKET, Key, ACL: 'private' });
 
     await s3Client.send(putObjectCommand);
 
@@ -50,7 +45,7 @@ const uploadAvatar: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (e
       },
       UpdateExpression: 'set avatar = :avatar, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
-        ':avatar': KeyFileName,
+        ':avatar': Key,
         ':updatedAt': new Date().toISOString(),
       },
     });

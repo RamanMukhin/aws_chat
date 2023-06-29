@@ -10,28 +10,21 @@ import { MESSAGE_TYPES } from 'src/common/constants';
 import { CustomError } from 'src/common/errors';
 import { middyfyWS } from '@libs/lambda';
 import { checkRoom } from 'src/common/check-room';
-import { saveMessageToRoom } from 'src/common/save-message';
-import { postMessageToRoom } from 'src/common/post-to-room';
+import { saveAndSendMessage } from 'src/common/save-and-send-message';
 
 const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
     console.log('Incoming event into message is:   ', event);
 
     const [userId, , disconnectAt]: string | undefined = event.requestContext?.authorizer?.principalId.split(' ');
-    const {
-      requestContext: { connectionId },
-    } = event;
+    const endpoint = createApiGatewayMangementEndpoint(event.requestContext.domainName, event.requestContext.stage);
 
     if (disconnectAt && Date.now() - +disconnectAt * 1000 >= 0) {
       console.error('TOKEN EXPIRED.');
 
-      const {
-        requestContext: { domainName, stage },
-      } = event;
-      const endpoint = createApiGatewayMangementEndpoint(domainName, stage);
       const apiGatewayManagementApiClient = createApiGatewayMangementApiClient(endpoint);
 
-      await deleteConnection(apiGatewayManagementApiClient, dynamoDBDocumentClient, connectionId);
+      await deleteConnection(apiGatewayManagementApiClient, dynamoDBDocumentClient, event.requestContext.connectionId);
 
       return;
     }
@@ -44,15 +37,16 @@ const message: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
 
     await checkRoom(roomId, userId);
 
-    const message = await saveMessageToRoom(dynamoDBDocumentClient, roomId, userId, MESSAGE_TYPES.text, messageData);
-
-    const {
-      requestContext: { domainName, stage },
-    } = event;
-    const endpoint = createApiGatewayMangementEndpoint(domainName, stage);
-    const apiGatewayMangementApiClient = createApiGatewayMangementApiClient(endpoint);
-
-    await postMessageToRoom(apiGatewayMangementApiClient, dynamoDBDocumentClient, roomId, message);
+    await saveAndSendMessage(
+      dynamoDBDocumentClient,
+      roomId,
+      userId,
+      MESSAGE_TYPES.text,
+      {
+        data: messageData,
+      },
+      endpoint,
+    );
 
     return formatJSONResponse();
   } catch (err) {

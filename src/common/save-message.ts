@@ -18,13 +18,14 @@ export const saveMessageToRoom = async (
       SK: DB_MAPPER.ENTITY(),
     },
     UpdateExpression:
-      'SET GSI_PK = :GSI_PK, GSI_SK = :GSI_SK, #type = :type, userId = :userId, #data = :data, createdAt = :createdAt',
+      'SET GSI_PK = :GSI_PK, GSI_SK = :GSI_SK, #type = :type, userId = :userId, #data = :data, isOpened = :isOpened, createdAt = :createdAt',
     ExpressionAttributeValues: {
       ':GSI_PK': DB_MAPPER.ROOM(DB_MAPPER.RAW_PK(roomId)),
       ':GSI_SK': DB_MAPPER.MESSAGE(messageId),
       ':type': messageType,
       ':userId': userId,
       ':data': JSON.stringify(messageData),
+      ':isOpened': false,
       ':createdAt': new Date().toISOString(),
     },
     ExpressionAttributeNames: {

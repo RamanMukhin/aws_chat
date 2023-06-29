@@ -32,7 +32,6 @@ const connect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
     if (disconnectAt) {
       userData.disconnectAt = disconnectAt;
     }
-    const { connectionId } = event.requestContext;
 
     const transactWriteCommand = new TransactWriteCommand({
       TransactItems: [
@@ -40,7 +39,7 @@ const connect: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event)
           Put: {
             TableName: TABLE,
             Item: {
-              PK: DB_MAPPER.CONNECTION(connectionId),
+              PK: DB_MAPPER.CONNECTION(event.requestContext.connectionId),
               SK: DB_MAPPER.ENTITY(),
               GSI_PK: DB_MAPPER.ENTITY(),
               GSI_SK: DB_MAPPER.USER(userId),

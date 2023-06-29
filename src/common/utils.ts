@@ -1,20 +1,20 @@
 import { format } from 'util';
 import { constants as httpConstants } from 'http2';
-import { DB_MAPPER, LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT, STAGES } from './constants';
+import { DB_MAPPER, LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT, REGION, STAGE, STAGES, WEBSOCKET_API_ID } from './constants';
 import { CustomError } from './errors';
 import { FILE_REQUIREMENTS_TYPE } from './types';
 import { FileTypeResult } from 'file-type';
 
 export const createApiGatewayMangementEndpoint = (
-  domain: string,
-  stage: string,
-  apiId?: string,
-  region?: string,
+  domain = '',
+  stage = STAGE,
+  apiId = WEBSOCKET_API_ID,
+  region = REGION,
 ): string => {
-  const apiGatewayMangementEndpoint =
-    apiId && region
-      ? format(format('https://%s.execute-api.%s.amazonaws.com/%s', apiId, region, stage))
-      : format(format('https://%s/%s', domain, stage));
+  const apiGatewayMangementEndpoint = domain
+    ? format(format('https://%s/%s', domain, stage))
+    : format(format('https://%s.execute-api.%s.amazonaws.com/%s', apiId, region, stage));
+
   return stage === STAGES.LOCAL ? LOCAL_APIGATEWAY_MANAGEMENT_ENDPOINT : apiGatewayMangementEndpoint;
 };
 

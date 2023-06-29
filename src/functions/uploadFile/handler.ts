@@ -10,23 +10,20 @@ import {
   BUCKET,
   DB_MAPPER,
   MESSAGE_TYPES,
-  REGION,
+  MODERATION_STATUS_TYPES,
   ROOMS_STORAGE_PREFIX,
   ROOM_FILES,
   ROOM_FILE_TYPES,
-  WEBSOCKET_API_ID,
 } from 'src/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@libs/s3-client';
 import { checkRoom } from 'src/common/check-room';
-import { checkFileTypeFromBuffer, createApiGatewayMangementEndpoint, createBase64Buffer } from 'src/common/utils';
+import { checkFileTypeFromBuffer, createBase64Buffer } from 'src/common/utils';
 import { checkImageContent } from 'src/common/moderate-image';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { postMessageToRoom } from 'src/common/post-to-room';
-import { saveMessageToRoom } from 'src/common/save-message';
-import { createApiGatewayMangementApiClient } from '@libs/api-gateway-management-api-client';
 import { rekognitionClient } from '@libs/rekognition-client';
+import { saveAndSendMessage } from 'src/common/save-and-send-message';
 
 const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (event) => {
   try {
@@ -34,18 +31,13 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
 
     const [userId]: string | undefined = (event.requestContext?.authorizer?.principalId || '').split(' ');
     const { roomId, type, fileName, data } = event.body;
-    const KeyFileName = join(`${ROOMS_STORAGE_PREFIX}/${type}/${DB_MAPPER.RAW_PK(roomId)}/${uuidv4()}/${fileName}`);
-    const Metadata = { fileName, userId, roomId, KeyFileName }
+    const Key = join(`${ROOMS_STORAGE_PREFIX}/${type}/${DB_MAPPER.RAW_PK(roomId)}/${uuidv4()}/${fileName}`);
+    const Metadata = { fileName, userId, roomId, keyFileName: Key };
 
     await checkRoom(roomId, userId);
 
     if (type === ROOM_FILE_TYPES.video || type === ROOM_FILE_TYPES.audio) {
-      const putObjectCommand = new PutObjectCommand({
-        Bucket: BUCKET,
-        Key: KeyFileName,
-        ACL: 'private',
-        Metadata,
-      });
+      const putObjectCommand = new PutObjectCommand({ Bucket: BUCKET, Key, ACL: 'private', Metadata });
 
       const url = await getSignedUrl(s3Client, putObjectCommand, { expiresIn: 1200 });
 
@@ -60,26 +52,16 @@ const uploadFile: ValidatedEventAPIGatewayProxyEvent<typeof schema> = async (eve
       await checkImageContent(rekognitionClient, Bytes);
     }
 
-    const putObjectCommand = new PutObjectCommand({
-      Body: Bytes,
-      Bucket: BUCKET,
-      Key: KeyFileName,
-      ACL: 'private',
-      Metadata,
-    });
+    const putObjectCommand = new PutObjectCommand({ Body: Bytes, Bucket: BUCKET, Key, ACL: 'private', Metadata });
 
     await s3Client.send(putObjectCommand);
 
-    const message = await saveMessageToRoom(dynamoDBDocumentClient, roomId, userId, MESSAGE_TYPES.file, KeyFileName);
+    const moderationStatus = MODERATION_STATUS_TYPES.SUCCEEDED;
 
-    const {
-      requestContext: { domainName, stage },
-    } = event;
-    const endpoint = createApiGatewayMangementEndpoint(domainName, stage, WEBSOCKET_API_ID, REGION);
-    const apiGatewayMangementApiClient = createApiGatewayMangementApiClient(endpoint);
-
-    // TODO: FIX MESSAGE SENDING
-    await postMessageToRoom(apiGatewayMangementApiClient, dynamoDBDocumentClient, roomId, message);
+    await saveAndSendMessage(dynamoDBDocumentClient, roomId, userId, MESSAGE_TYPES.file, {
+      data: Key,
+      moderationStatus,
+    });
 
     return formatJSONResponse({ message: 'success' }, httpConstants.HTTP_STATUS_CREATED);
   } catch (err) {

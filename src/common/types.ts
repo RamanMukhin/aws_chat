@@ -17,6 +17,8 @@ export type DB_ENTITY_NAME = 'USER' | 'ROOM' | 'MESSAGE' | 'CONNECTION' | 'ENTIT
 
 export type MODERATION_STATUS_TYPE = 'IN_PROGRESS' | 'SUCCEEDED' | 'FAILED';
 
+export type AWS_POLICY_EFFECT = 'Allow' | 'Deny';
+
 export type Entity = {
   PK: string;
   SK: string;
