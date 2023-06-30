@@ -13,7 +13,7 @@ export const saveAndSendMessage = async (
   messageType: MESSAGE_TYPE,
   messageData: MESSAGE_DATA_TYPE,
   url?: string,
-) => {
+): Promise<void> => {
   const message = await saveMessageToRoom(
     dynamoDBDocumentClient,
     roomId,

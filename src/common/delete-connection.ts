@@ -6,7 +6,7 @@ export const deleteConnection = async (
   apiGatewayManagementApiClient: ApiGatewayManagementApiClient,
   dynamoDBDocumentClient: DynamoDBDocumentClient,
   connectionId: string,
-) => {
+): Promise<void> => {
   const deleteConnectionCommand = new DeleteConnectionCommand({
     ConnectionId: connectionId,
   });

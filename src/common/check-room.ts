@@ -4,7 +4,7 @@ import { DB_MAPPER, TABLE } from './constants';
 import { dynamoDBDocumentClient } from '@libs/dynamo-db-doc-client';
 import { CustomError } from './errors';
 
-export const checkRoom = async (roomId: string, userId: string) => {
+export const checkRoom = async (roomId: string, userId: string): Promise<void> => {
   const getCommand = new GetCommand({
     TableName: TABLE,
     Key: {
